@@ -20,8 +20,8 @@ class HomeState extends  State<Home>{
     var lstTitles = [];
     var selectedPageIndex = 0;
     List<String> lstYoutubeUrls = [];
-    late PlayVideoAsAudio playVideoAsAudio;
-    static  List<Widget> lstNavigations = [ const HomePage(), const FavouritePage(), const LivesPage()];
+    static late PlayVideoAsAudio playVideoAsAudio;
+    static  List<Widget> lstNavigations = [  HomePage(),  FavouritePage(),  LivesPage()];
     // Youtube Player
     //late PlayerState _playerState;
     //late YoutubeMetaData _metaData;

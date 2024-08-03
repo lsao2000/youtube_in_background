@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_in_background/pages/MusicObject.dart';
 import 'package:youtube_in_background/pages/PlayVideoAsAudio.dart';
-
+import 'package:youtube_in_background/pages/Home.dart';
 class HomePage extends StatefulWidget{
-    late PlayVideoAsAudio playVideoAsAudio;
-     HomePage({super.key, required this.playVideoAsAudio});
+    //late PlayVideoAsAudio playVideoAsAudio;
+     HomePage({super.key});
     @override
-    HomePageState createState() => HomePageState(playVideoAsAudio:playVideoAsAudio );
+    HomePageState createState() => HomePageState();
 }
 class HomePageState extends State<HomePage> {
-    HomePageState({required this.playVideoAsAudio});
+    HomePageState();
     static String url = "https://iv.datura.network";
     static List<MusicObject> lstVideos = [ ];
     static List<String> lstImages = [];
     static var lstTitles = [];
     static List<String> lstYoutubeUrls = [];
-    late PlayVideoAsAudio playVideoAsAudio;
+    PlayVideoAsAudio playVideoAsAudio = HomeState.playVideoAsAudio;
 
     @override
     Widget build(BuildContext context) {

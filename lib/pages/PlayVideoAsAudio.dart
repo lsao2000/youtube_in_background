@@ -86,13 +86,14 @@ class PlayVideoAsAudio {
                 var manifest = await yt.videos.streamsClient.getManifest(video.id);
                 var audioStreamInfo = manifest.audioOnly.withHighestBitrate();
                 youtubeUrl = audioStreamInfo.url.toString();
+                print("Real url: $youtubeUrl");
+                await audioplayerhandler.setUrl(youtubeUrl);
+                audioplayerhandler.play();
             } catch (e) {
                 print("unkonwn error 2 in Playing audio: $e");
             }
         }
-        await audioplayerhandler.setUrl(youtubeUrl);
-        audioplayerhandler.play();
-    }
+            }
     Future<void> pauseAudio() async {
             audioplayerhandler.pause();
     }
