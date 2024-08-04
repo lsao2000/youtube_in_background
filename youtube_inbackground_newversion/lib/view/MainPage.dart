@@ -16,10 +16,17 @@ class _MainPageState extends State<MainPage> {
     List<Widget> lstNavigationPages = [ const HomePage(), const FavouritePage(), const LivesPage()];
     @override
     Widget build(BuildContext context) {
+       double width = MediaQuery.of(context).size.width;
+       double height = MediaQuery.of(context).size.height;
         return Scaffold(
-
             appBar: AppBar(
                 backgroundColor: appBarColor,
+                 actions: [
+                     Container(
+                         padding: EdgeInsets.symmetric(vertical: 0, horizontal: width * 0.02),
+                     child:Icon(Icons.search, color: brandColor,size: width * 0.06,)
+                         )
+                 ],
                 title: Text(widget.title,
                     style:  TextStyle(color: brandColor, fontSize: 30.0, fontWeight: FontWeight.bold),
                 ),
