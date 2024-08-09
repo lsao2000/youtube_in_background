@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:youtube_inbackground_newversion/model/PlayVideAsAudio.dart';
 import 'package:youtube_inbackground_newversion/view/MainPage.dart';
 void main() {
-  runApp(const MyApp());
+  runApp(
+      ChangeNotifierProvider(create:(_)=> PlayVideoAsAudio() ,
+          child:const MyApp(),)
+      );
 }
 
 class MyApp extends StatelessWidget {

@@ -1,108 +1,137 @@
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:provider/provider.dart';
+import 'package:youtube_inbackground_newversion/model/PlayVideAsAudio.dart';
+import 'package:youtube_inbackground_newversion/model/VideoContoller.dart';
+import 'package:youtube_inbackground_newversion/utils/colors.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => HomePageState();
 }
-
-class _HomePageState extends State<HomePage> {
-    YoutubeExplode yt = YoutubeExplode();
-    List<String> lst = ["ks", "lskd", "sjkd" , "kjsjd" , " slksd", "shs","ks", "lskd", "sjkd" , "kjsjd" , " slksd", "shs", "ks", "lskd", "sjkd" , "kjsjd" , " slksd", "shs"];
-
-    TextEditingController searchController = TextEditingController();
+class HomePageState extends State<HomePage> {
+    VideoContoller? currentVideoController ;
+    @override
+    void initState() {
+        super.initState();
+    }
     @override
     Widget build(BuildContext context) {
         double width = MediaQuery.sizeOf(context).width;
         double height = MediaQuery.sizeOf(context).height;
-        String title = "The title of the video is here";
-        return SingleChildScrollView(
-                child: Column(
-                    children: <Widget>[
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                                Container(
-                                    padding: EdgeInsets.symmetric(vertical:height * .009, horizontal: width * 0.015),
-                                    width: width * 0.8,
-                                    height: height * 0.07,
-                                    child:TextFormField(
-                                        controller: searchController,
-                                        textAlign: TextAlign.left,
-                                        decoration: InputDecoration(
-                                            hintText: "Seach For Videos",
-                                            //hintStyle: ,
-                                            border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                                borderSide: const BorderSide(color: Colors.grey),
-                                            ),
-                                            focusedBorder:  OutlineInputBorder(
-                                                borderRadius:BorderRadius.circular(8),
-                                                borderSide: const BorderSide(color: Colors.grey)
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                                borderSide:const BorderSide(color: Colors.grey),),
-                                            disabledBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
-                                                borderSide:const BorderSide(color: Colors.grey),
-                                            ),
-                                        ),
-                                        cursorColor: Colors.grey,
-                                    )
-                                ),
-                                InkWell(
-                                    child:const Icon(Icons.search),
-                                    onTap: (){
-                                        print("taped");
-                                        //printToConsole("");
-                                    },
-                                ),
-                            ],
-                        ),
-                        SizedBox(
-                            width: width,
-                            height: height ,
-                            child: ListView.builder(
-                                itemCount: lst.length,
-                                itemBuilder: (context, index){
-                                    return InkWell(
-                                        child: Container(
-                                            padding: EdgeInsets.symmetric(vertical: height * 0.01, horizontal: width * 0.02),
-                                            child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                    SizedBox(
-                                                        child:ClipRRect(
-                                                        borderRadius: BorderRadius.circular(8),
-                                                        child:Image.network("https://img.youtube.com/vi/XRDfETqZvJM/default.jpg",
-                                                            width: 200,
-                                                            scale: .1
+        return Consumer<PlayVideoAsAudio>(builder: (context, playVideoAsAudio, child){
+            if (int.parse(playVideoAsAudio.runtimeTime.toString()) == 0)  {
+                return  Center(child: Text("Search Something", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: placeHolderColor),),) ;
+            }
+            if (playVideoAsAudio.allLstVideos.isEmpty) {
+                return Center(
+                    child:SizedBox(
+                        width: width * 0.15,
+                        height: height * 0.08,
+                        child: CircularProgressIndicator(
+                            color: loading,
+                        )
+                    )
+                );
+            }
+            return SingleChildScrollView(
+                        child: Column(
+                            children: <Widget>[
+                                SizedBox(
+                                    width: width,
+                                    height: height * 0.83,
+                                    child: ListView.builder(
+                                        itemCount:playVideoAsAudio.allLstVideos.length,
+                                        itemBuilder: (context, index){
+                                            VideoContoller videoContoller =playVideoAsAudio.allLstVideos[index];
+                                            return InkWell(
+                                                //width: width ,
+                                                child: Container(
+                                                    padding: EdgeInsets.symmetric(vertical: height * 0.01, horizontal: width * 0.02),
+                                                    child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                            SizedBox(
+                                                                child:Stack(
+                                                                    alignment: Alignment.bottomRight,
+                                                                    children: [
+                                                                        ClipRRect(
+                                                                            borderRadius: BorderRadius.circular(8),
+                                                                            child:Image.network("https://img.youtube.com/vi/${videoContoller.getVideoId}/default.jpg",
+                                                                                width: width * 0.485,
+                                                                                scale: .1,
+                                                                            ),
+                                                                        ),
+                                                                        Positioned(
+                                                                            bottom: 10,
+                                                                            //right: -1,
+                                                                            //width: 1,
+                                                                            right: -width * 0.01,
+                                                                            child:
+                                                                        ClipRRect(
+                                                                                borderRadius: BorderRadius.circular(18),
+                                                                                child:  ElevatedButton(
+                                                                                    style:ElevatedButton.styleFrom(
+                                                                                        backgroundColor:bottomBarColor,
+                                                                                        shape:const CircleBorder(),
+                                                                                    ),
+                                                                                    onPressed: (){
+                                                                                        if (currentVideoController == null) {
+                                                                                            setState(() {
+                                                                                                currentVideoController = videoContoller;
+                                                                                                currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
+                                                                                                //videoContoller.setIsPlaying = !videoContoller.getIsPlaying;
+                                                                                            });
+                                                                                        }else if(currentVideoController!.getIsPlaying){
+                                                                                            currentVideoController!.setIsPlaying = false;
+                                                                                            currentVideoController = videoContoller;
+                                                                                        }
+                                                                                        setState(() {
+                                                                                            videoContoller.setIsPlaying = !videoContoller.getIsPlaying;
+                                                                                        });
+                                                                                        print(videoContoller.getIsPlaying);
+                                                                                    },
+                                                                                    child:videoContoller.getIsPlaying ? Icon(Icons.pause, color: brandColor,)  : Icon(Icons.play_arrow, color: brandColor,),
+                                                                                ),
+                                                                            ))
+                                                                    ],
+                                                                )
                                                             ),
-                                                        ),
-                                                    ),
-                                                     Column(
-                                                         children: [
-                                                             Container(
-                                                                 padding: EdgeInsets.symmetric(vertical: height * 0.02),
-                                                                 width: width * 0.42,
-                                                                 child: const Text("The title oof the video is heref the video is here",
-                                                                     maxLines: 2,
-                                                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis),),)
+                                                            videoInfo(width, height, videoContoller),
                                                         ],
-                                                    ),
-                                            ],)
-                                        ),
-                                    );
-                                }
-                            )
-                        ,)
-                    ]
+                                                    )
+                                                ),
+                                            );
+                                        }
+                                    )
+                                ,)
+                            ]
+                        ),
+                    );
+                //}
+            });
+    }
+    Widget videoInfo(double width, double height, VideoContoller videoContoller){
+        return Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                Container(
+                    padding: EdgeInsets.symmetric(vertical: height * 0.005),
+                    width: width * 0.42,
+                    child:  Text(videoContoller.getTitleVideo,
+                        maxLines: 3,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, overflow: TextOverflow.ellipsis),),
                 ),
-            ) ;
+                //Text("channel ${videoContoller.getVideoChannel}"),
+                videoContoller.getVideoDuration == 0 ? const Text("") :  Text(videoContoller.getVideoDuration.toString()),
+                Container(
+                    padding: EdgeInsets.symmetric(horizontal: width * 0.02),
+                    child: Text("${videoContoller.getVideoWatchers} views")
+                    ,)
+            ],
+        );
+
     }
 }
