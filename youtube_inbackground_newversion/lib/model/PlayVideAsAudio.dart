@@ -22,27 +22,42 @@ class PlayVideoAsAudio extends ChangeNotifier {
         List<Video> lstVideosInfo =  lstSearch!.toList(growable: true);
         allLstVideos =  lstVideosInfo.map((el) =>
             VideoContoller(videoId: el.id.toString(),
-
                 titleVideo: el.title.toString(),
-                videoDuration: el.duration?.inMinutes.toDouble() ?? 0,
+                videoDuration: customDurationText(el.duration!),
                 videoChannel: el.channelId.value,
                 videoWatchers:customViewsText( el.engagement.viewCount))
         ).toList();
         notifyListeners();
         return allLstVideos;
     }
-
     Future<void> addMoreVideo() async{
         lstSearch!.nextPage();
         List<Video> lstVideosInfo = lstSearch!.toList();
         allLstVideos += lstVideosInfo.map((el) =>
             VideoContoller(videoId: el.id.toString(),
                 titleVideo: el.title.toString(),
-                videoDuration: el.duration?.inMinutes.toDouble() ?? 0,
+                videoDuration: el.duration.toString(),
                 videoChannel: el.channelId.toString(),
                 videoWatchers:customViewsText( el.engagement.viewCount))
         ).toList();
         notifyListeners();
+    }
+    String customDurationText(Duration duration){
+        try {
+            if (duration.inSeconds == 0) {
+                return "";
+            }
+            String duratinString = duration.toString();
+            List<String> lstDuration = duratinString.split(":");
+            if (int.parse(lstDuration.first.toString()) == 0) {
+                lstDuration.removeAt(0);
+            }
+            lstDuration.first =int.parse(lstDuration.first).toString();
+            lstDuration.last = lstDuration.last.split(".")[0];
+            return lstDuration.join(":");
+        } catch ( e ) {
+            return duration.toString();
+        }
     }
     String customViewsText(int views){
         if(views < 1000){
@@ -54,6 +69,6 @@ class PlayVideoAsAudio extends ChangeNotifier {
             var newViews = views / 1000000;
             return "${newViews.toStringAsFixed(1)} M";
         }
-        return "$views B";
+        return "$views Md";
     }
 }
