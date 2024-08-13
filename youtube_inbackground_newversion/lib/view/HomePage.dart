@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_inbackground_newversion/model/PlayVideAsAudio.dart';
 import 'package:youtube_inbackground_newversion/model/VideoContoller.dart';
@@ -52,7 +51,7 @@ class HomePageState extends State<HomePage> {
                                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                         crossAxisAlignment: CrossAxisAlignment.start,
                                                         children: [
-                                                            videoImage(width, height, videoContoller),
+                                                            videoImage(width, height, videoContoller, playVideoAsAudio),
                                                             videoInfo(width, height, videoContoller),
                                                         ],
                                                     )
@@ -67,7 +66,8 @@ class HomePageState extends State<HomePage> {
                 //}
             });
     }
-    Widget videoImage(double width, double height, VideoContoller videoContoller){
+
+    Widget videoImage(double width, double height, VideoContoller videoContoller, PlayVideoAsAudio playVideoAsAudio){
         return SizedBox(
             child:Stack(
                 alignment: Alignment.bottomRight,
@@ -79,8 +79,20 @@ class HomePageState extends State<HomePage> {
                             scale: .1,
                         ),
                     ),
+                    videoContoller.getIsLive ?const  Text("") :Positioned(
+                      left:width * 0.02,
+                      bottom:height * 0.014,
+                      child:Container(
+                        decoration:  BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(4)),
+                        padding: EdgeInsets.symmetric(vertical: 0,horizontal:width * 0.02) ,
+                        child: Text(
+                          videoContoller.getVideoDuration,
+                          style:const TextStyle( color: Colors.white),) ,
+                      )
+                    ),
+                    // Below the widget for button that will play the audio and pause the audio.
                     Positioned(
-                        bottom: 10,
+                        bottom: height * 0.01,
                         right: -width * 0.01,
                         child:
                         ClipRRect(
@@ -91,6 +103,7 @@ class HomePageState extends State<HomePage> {
                                     shape:const CircleBorder(),
                                 ),
                                 onPressed: (){
+
                                     // posibilities of pause and play button in videoContoller.
                                     // You play audio for the first time.
                                     if (currentVideoController == null) {
@@ -113,6 +126,7 @@ class HomePageState extends State<HomePage> {
                                             currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
                                         });
                                     }
+                                   playVideoAsAudio.playAudio(videoContoller);
                                 },
                                 child:videoContoller.getIsPlaying ? Icon(Icons.pause, color: brandColor,)  : Icon(Icons.play_arrow, color: brandColor,),
                             ),
@@ -134,11 +148,17 @@ class HomePageState extends State<HomePage> {
                         maxLines: 3,
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, overflow: TextOverflow.ellipsis),),
                 ),
-                videoContoller.getVideoDuration == 0 ? const Text("") :  Text(videoContoller.getVideoDuration.toString()),
                 Container(
-                    padding: EdgeInsets.symmetric(horizontal: width * 0.02),
-                    child: Text("${videoContoller.getVideoWatchers} views")
-                    ,)
+                  padding: EdgeInsets.symmetric(horizontal: width * 0.005),
+                  child: Text("${videoContoller.getVideoWatchers} views", style: TextStyle(fontSize: width * 0.03,),),
+                ),
+                !videoContoller.getIsLive ? const Text("") : Row(children: [
+                   Container(
+                     padding: EdgeInsets.symmetric(horizontal: width * 0.005, vertical: height * 0.01),
+                     child: Icon(Icons.circle, color: Colors.red ,size: width * 0.05),),
+                  const Text("Live", style: TextStyle(fontWeight: FontWeight.bold)),
+                ],
+                )
             ],
         );
 

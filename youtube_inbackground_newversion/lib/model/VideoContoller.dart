@@ -4,15 +4,17 @@ class VideoContoller {
     late final String  _videoWatches;
     late final String _videoDuration;
     late final String _videoChannel;
+    late final  bool _isLive ;
     bool _isPlaying = false;
-    VideoContoller({required String videoId, required String titleVideo , required String videoWatchers , required String videoDuration, required String videoChannel})
-            :_videoId = videoId, _titleVideo = titleVideo, _videoChannel = videoChannel, _videoDuration = videoDuration, _videoWatches = videoWatchers;
+    VideoContoller({required String videoId, required String titleVideo , required String videoWatchers , required String videoDuration, required String videoChannel, required bool isLive})
+            :_videoId = videoId, _titleVideo = titleVideo, _videoChannel = videoChannel, _videoDuration = videoDuration, _videoWatches = videoWatchers, _isLive = isLive;
     String get getVideoId => _videoId;
     String get getTitleVideo => _titleVideo;
     String get getVideoWatchers => _videoWatches;
     String get getVideoDuration => _videoDuration;
     String get getVideoChannel => _videoChannel;
     bool get getIsPlaying => _isPlaying;
+    bool get getIsLive => _isLive;
     set setIsPlaying (bool value) {
         _isPlaying = value;
     }

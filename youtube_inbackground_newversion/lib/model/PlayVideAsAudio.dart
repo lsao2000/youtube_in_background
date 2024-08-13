@@ -16,14 +16,16 @@ class PlayVideoAsAudio extends ChangeNotifier {
 
     List<VideoContoller> allLstVideos = [];
     Future<List<VideoContoller>> searchYoutube(String searchType) async {
+        // Dont delete the line below.
         runtimeTime = 1;
         notifyListeners();
         lstSearch = await yt.search.search(searchType);
         List<Video> lstVideosInfo =  lstSearch!.toList(growable: true);
         allLstVideos =  lstVideosInfo.map((el) =>
             VideoContoller(videoId: el.id.toString(),
+                isLive: el.isLive,
                 titleVideo: el.title.toString(),
-                videoDuration: customDurationText(el.duration!),
+                videoDuration: customDurationText(el.duration ?? Duration.zero),
                 videoChannel: el.channelId.value,
                 videoWatchers:customViewsText( el.engagement.viewCount))
         ).toList();
@@ -35,6 +37,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
         List<Video> lstVideosInfo = lstSearch!.toList();
         allLstVideos += lstVideosInfo.map((el) =>
             VideoContoller(videoId: el.id.toString(),
+                isLive: el.isLive,
                 titleVideo: el.title.toString(),
                 videoDuration: el.duration.toString(),
                 videoChannel: el.channelId.toString(),
@@ -45,7 +48,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
     String customDurationText(Duration duration){
         try {
             if (duration.inSeconds == 0) {
-                return "";
+                return "0";
             }
             String duratinString = duration.toString();
             List<String> lstDuration = duratinString.split(":");
@@ -70,5 +73,19 @@ class PlayVideoAsAudio extends ChangeNotifier {
             return "${newViews.toStringAsFixed(1)} M";
         }
         return "$views Md";
+    }
+    Future<String> playAudio(VideoContoller videoController) async {
+      var videoId = videoController.getVideoId;
+      if( videoController.getIsLive){
+          if (videoController.getIsPlaying) {
+              var manifest = await yt.videos.streams.getHttpLiveStreamUrl(VideoId(videoId));
+              audioPlayer.play(UrlSource(manifest.toString()));
+          }
+          else{
+              audioPlayer.pause();
+          }
+          return "work";
+      }
+      return "work 2";
     }
 }
