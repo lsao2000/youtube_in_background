@@ -9,11 +9,13 @@ class HomePage extends StatefulWidget {
   @override
   State<HomePage> createState() => HomePageState();
 }
+
 class HomePageState extends State<HomePage> {
     VideoContoller? currentVideoController ;
     @override
     void initState() {
         super.initState();
+
     }
     @override
     Widget build(BuildContext context) {
@@ -52,7 +54,7 @@ class HomePageState extends State<HomePage> {
                                                         crossAxisAlignment: CrossAxisAlignment.start,
                                                         children: [
                                                             videoImage(width, height, videoContoller, playVideoAsAudio),
-                                                            videoInfo(width, height, videoContoller),
+                                                            videoInfo(width, height, videoContoller, playVideoAsAudio),
                                                         ],
                                                     )
                                                 ),
@@ -64,13 +66,13 @@ class HomePageState extends State<HomePage> {
                         ),
                     );
                 //}
-            });
+            }
+    );
     }
-
     Widget videoImage(double width, double height, VideoContoller videoContoller, PlayVideoAsAudio playVideoAsAudio){
         return SizedBox(
             child:Stack(
-                alignment: Alignment.bottomRight,
+                alignment: Alignment.center,
                 children: [
                     ClipRRect(
                         borderRadius: BorderRadius.circular(8),
@@ -79,64 +81,96 @@ class HomePageState extends State<HomePage> {
                             scale: .1,
                         ),
                     ),
-                    videoContoller.getIsLive ?const  Text("") :Positioned(
-                      left:width * 0.02,
-                      bottom:height * 0.014,
-                      child:Container(
-                        decoration:  BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(4)),
-                        padding: EdgeInsets.symmetric(vertical: 0,horizontal:width * 0.02) ,
-                        child: Text(
-                          videoContoller.getVideoDuration,
-                          style:const TextStyle( color: Colors.white),) ,
-                      )
-                    ),
-                    // Below the widget for button that will play the audio and pause the audio.
+                    videoContoller.getIsLive ? const  Text("") :
+                    // Below is the duration of the music.
                     Positioned(
-                        bottom: height * 0.01,
-                        right: -width * 0.01,
-                        child:
-                        ClipRRect(
-                            borderRadius: BorderRadius.circular(18),
-                            child:  ElevatedButton(
-                                style:ElevatedButton.styleFrom(
-                                    backgroundColor:bottomBarColor,
-                                    shape:const CircleBorder(),
-                                ),
-                                onPressed: (){
-
-                                    // posibilities of pause and play button in videoContoller.
-                                    // You play audio for the first time.
-                                    if (currentVideoController == null) {
-                                        setState(() {
-                                            currentVideoController = videoContoller;
-                                            currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
-                                        });
-                                    }
-                                    // You play another audio after first time.
-                                    else if(currentVideoController != videoContoller){
-                                        setState(() {
-                                            currentVideoController!.setIsPlaying = false;
-                                            currentVideoController = videoContoller;
-                                            currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
-                                        });
-                                    }
-                                    // You play and pause the same audio.
-                                    else{
-                                        setState(() {
-                                            currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
-                                        });
-                                    }
-                                   playVideoAsAudio.playAudio(videoContoller);
-                                },
-                                child:videoContoller.getIsPlaying ? Icon(Icons.pause, color: brandColor,)  : Icon(Icons.play_arrow, color: brandColor,),
-                            ),
+                        left:width * 0.02,
+                        bottom:height * 0.024,
+                        child:Container(
+                            decoration:  BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(4)),
+                            padding: EdgeInsets.symmetric(vertical: 0,horizontal:width * 0.02) ,
+                            child: Text(
+                                videoContoller.getVideoDuration,
+                                style:const TextStyle( color: Colors.white),),
                         )
-                    )
+                    ),
+            //bottom: height * 0.01,
+            //right: -width * 0.01,
+            // Below the widget for button that will play the audio and pause the audio.
+                ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child:  ElevatedButton(
+                        style:ElevatedButton.styleFrom(
+                            backgroundColor:bottomBarColor,
+                            shape:const CircleBorder(),
+                        ),
+                        onPressed: (){
+                            // posibilities of pause and play button in videoContoller.
+                            // You play audio for the first time.
+                            if (currentVideoController == null) {
+                                setState(() {
+                                    currentVideoController = videoContoller;
+                                    currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
+                                    //playVideoAsAudio.playAudio(currentVideoController!);
+                                    playVideoAsAudio.playAudio(videoContoller);
+                                });
+                            }
+                            // You play another audio after first time.
+                            else if(currentVideoController != videoContoller){
+                                setState(() {
+                                    currentVideoController!.setIsPlaying = false;
+                                    currentVideoController = videoContoller;
+                                    currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
+                                   //playVideoAsAudio.playAudio(videoContoller);
+                                    playVideoAsAudio.playAudio(currentVideoController!);
+                                });
+                            }
+                            // You play and pause the same audio.
+                            else{
+                                setState(() {
+                                    currentVideoController!.setIsPlaying = !videoContoller.getIsPlaying;
+                                    //playVideoAsAudio.playAudio(videoContoller);
+                                    playVideoAsAudio.playAudio(currentVideoController!);
+                                });
+                            }
+                        //print("button clicked");
+                        },
+                        child:videoContoller.getIsPlaying ? Icon(Icons.pause, color: brandColor,)  : Icon(Icons.play_arrow, color: brandColor,),
+                    ),
+                ),
+                videoContoller.getIsLive ? const Text("") :
+                        videoContoller.getIsPlaying ?
+                        Positioned(
+                            bottom: height * 0.007,
+                            child: SizedBox(
+                                width: width * 0.47,
+                                child: SliderTheme(
+                                    data: SliderThemeData(
+                                        overlayShape: SliderComponentShape.noOverlay
+                                    ),
+                                    child: Slider(
+                                        label: "hhh",
+                                        thumbColor: bottomBarColor,
+                                        activeColor: bottomBarColor,
+                                        min: 0.0,
+                                        max: videoContoller.getIsLive ? 2000 :videoContoller.getRealDuration.inSeconds.toDouble(),
+                                        value: playVideoAsAudio.audioPlayer.getCurrentPosition().then((value) => value!.inSeconds.toDouble()),
+                                        onChanged: (value) {
+                                            setState(() {
+                                                videoContoller.updateProgressValue = value;
+                                                playVideoAsAudio.audioPlayer.seek(Duration(seconds: value.toInt()));
+                                            });
+                                            print(videoContoller.getProgrssValue);
+                                        }),
+                                )
+                                        )
+                                        )
+                    : const Text("")
                 ],
             )
         );
     }
-    Widget videoInfo(double width, double height, VideoContoller videoContoller){
+    Widget videoInfo(double width, double height, VideoContoller videoContoller, PlayVideoAsAudio playVideoAsAudio){
         return Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,9 +192,8 @@ class HomePageState extends State<HomePage> {
                      child: Icon(Icons.circle, color: Colors.red ,size: width * 0.05),),
                   const Text("Live", style: TextStyle(fontWeight: FontWeight.bold)),
                 ],
-                )
+                ),
             ],
         );
-
     }
 }

@@ -23,6 +23,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
         List<Video> lstVideosInfo =  lstSearch!.toList(growable: true);
         allLstVideos =  lstVideosInfo.map((el) =>
             VideoContoller(videoId: el.id.toString(),
+                realDuration: el.duration ?? Duration.zero,
                 isLive: el.isLive,
                 titleVideo: el.title.toString(),
                 videoDuration: customDurationText(el.duration ?? Duration.zero),
@@ -37,6 +38,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
         List<Video> lstVideosInfo = lstSearch!.toList();
         allLstVideos += lstVideosInfo.map((el) =>
             VideoContoller(videoId: el.id.toString(),
+                realDuration: el.duration ?? Duration.zero,
                 isLive: el.isLive,
                 titleVideo: el.title.toString(),
                 videoDuration: el.duration.toString(),
@@ -80,12 +82,19 @@ class PlayVideoAsAudio extends ChangeNotifier {
           if (videoController.getIsPlaying) {
               var manifest = await yt.videos.streams.getHttpLiveStreamUrl(VideoId(videoId));
               audioPlayer.play(UrlSource(manifest.toString()));
+          }else if(videoController.getIsPlaying == false){
+              audioPlayer.pause();
           }
           else{
               audioPlayer.pause();
           }
           return "work";
       }
+      var manifest = await yt.videos.streamsClient.getManifest(videoId);
+      var audioStreamInfo = manifest.audioOnly.withHighestBitrate();
+        audioPlayer.play(UrlSource(audioStreamInfo.url.toString()));
+        print("all done");
       return "work 2";
     }
+
 }
