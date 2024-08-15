@@ -28,7 +28,8 @@ class PlayVideoAsAudio extends ChangeNotifier {
                 titleVideo: el.title.toString(),
                 videoDuration: customDurationText(el.duration ?? Duration.zero),
                 videoChannel: el.channelId.value,
-                videoWatchers:customViewsText( el.engagement.viewCount))
+                videoWatchers:customViewsText( el.engagement.viewCount),
+                )
         ).toList();
         notifyListeners();
         return allLstVideos;
@@ -77,24 +78,27 @@ class PlayVideoAsAudio extends ChangeNotifier {
         return "$views Md";
     }
     Future<String> playAudio(VideoContoller videoController) async {
-      var videoId = videoController.getVideoId;
-      if( videoController.getIsLive){
-          if (videoController.getIsPlaying) {
-              var manifest = await yt.videos.streams.getHttpLiveStreamUrl(VideoId(videoId));
-              audioPlayer.play(UrlSource(manifest.toString()));
-          }else if(videoController.getIsPlaying == false){
-              audioPlayer.pause();
-          }
-          else{
-              audioPlayer.pause();
-          }
-          return "work";
-      }
-      var manifest = await yt.videos.streamsClient.getManifest(videoId);
-      var audioStreamInfo = manifest.audioOnly.withHighestBitrate();
-        audioPlayer.play(UrlSource(audioStreamInfo.url.toString()));
-        print("all done");
-      return "work 2";
+        var videoId = videoController.getVideoId;
+        if (videoController.getIsPlaying) {
+            if( videoController.getIsLive){
+                var manifest = await yt.videos.streams.getHttpLiveStreamUrl(VideoId(videoId));
+                audioPlayer.play(UrlSource(manifest.toString()));
+                print("audio played");
+                return "work";
+            }
+            var manifest = await yt.videos.streamsClient.getManifest(videoId);
+            var audioStreamInfo = manifest.audioOnly.withHighestBitrate();
+            audioPlayer.play(UrlSource(audioStreamInfo.url.toString()));
+            print("audio played 2");
+            return "work 2";
+        }
+        audioPlayer.pause();
+        print("audio paused");
+        return "work 3";
     }
-
+    Future<void> updateValueDuration(VideoContoller videoController) async {
+        //audioPlayer.onPositionChanged.listen((value){
+        //    videoController.updateProgressValue = value.inSeconds.toDouble();
+        //}) ;
+    }
 }

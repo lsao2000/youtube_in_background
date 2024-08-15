@@ -1,3 +1,5 @@
+import 'package:audio_service/audio_service.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_inbackground_newversion/model/PlayVideAsAudio.dart';
@@ -9,12 +11,19 @@ class HomePage extends StatefulWidget {
   @override
   State<HomePage> createState() => HomePageState();
 }
-
 class HomePageState extends State<HomePage> {
     VideoContoller? currentVideoController ;
+    PlayVideoAsAudio playVideoAsAudio = PlayVideoAsAudio();
     @override
     void initState() {
         super.initState();
+        var ls = playVideoAsAudio.audioPlayer.onPositionChanged.listen((value) {
+            try {
+                currentVideoController?.updateProgressValue = value.inSeconds.toDouble() ;
+            } catch (e) {
+                print("cant update");
+            }
+        });
 
     }
     @override
@@ -65,9 +74,8 @@ class HomePageState extends State<HomePage> {
                             ]
                         ),
                     );
-                //}
-            }
-    );
+                }
+            );
     }
     Widget videoImage(double width, double height, VideoContoller videoContoller, PlayVideoAsAudio playVideoAsAudio){
         return SizedBox(
@@ -94,8 +102,6 @@ class HomePageState extends State<HomePage> {
                                 style:const TextStyle( color: Colors.white),),
                         )
                     ),
-            //bottom: height * 0.01,
-            //right: -width * 0.01,
             // Below the widget for button that will play the audio and pause the audio.
                 ClipRRect(
                     borderRadius: BorderRadius.circular(18),
@@ -111,64 +117,104 @@ class HomePageState extends State<HomePage> {
                                 setState(() {
                                     currentVideoController = videoContoller;
                                     currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
-                                    //playVideoAsAudio.playAudio(currentVideoController!);
-                                    playVideoAsAudio.playAudio(videoContoller);
                                 });
                             }
                             // You play another audio after first time.
                             else if(currentVideoController != videoContoller){
                                 setState(() {
                                     currentVideoController!.setIsPlaying = false;
+                                    videoContoller.setIsPlaying = !videoContoller.getIsPlaying;
                                     currentVideoController = videoContoller;
-                                    currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
-                                   //playVideoAsAudio.playAudio(videoContoller);
-                                    playVideoAsAudio.playAudio(currentVideoController!);
                                 });
                             }
                             // You play and pause the same audio.
                             else{
                                 setState(() {
-                                    currentVideoController!.setIsPlaying = !videoContoller.getIsPlaying;
-                                    //playVideoAsAudio.playAudio(videoContoller);
-                                    playVideoAsAudio.playAudio(currentVideoController!);
+                                    currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
                                 });
                             }
-                        //print("button clicked");
+                            playVideoAsAudio.playAudio(currentVideoController!);
                         },
-                        child:videoContoller.getIsPlaying ? Icon(Icons.pause, color: brandColor,)  : Icon(Icons.play_arrow, color: brandColor,),
-                    ),
+                    child: videoContoller.getIsPlaying ? Icon(Icons.pause, color: brandColor,)
+                      : Icon(Icons.play_arrow, color: brandColor,)
+                    )
                 ),
                 videoContoller.getIsLive ? const Text("") :
-                        videoContoller.getIsPlaying ?
                         Positioned(
                             bottom: height * 0.007,
                             child: SizedBox(
                                 width: width * 0.47,
-                                child: SliderTheme(
-                                    data: SliderThemeData(
-                                        overlayShape: SliderComponentShape.noOverlay
-                                    ),
-                                    child: Slider(
-                                        label: "hhh",
-                                        thumbColor: bottomBarColor,
-                                        activeColor: bottomBarColor,
-                                        min: 0.0,
-                                        max: videoContoller.getIsLive ? 2000 :videoContoller.getRealDuration.inSeconds.toDouble(),
-                                        value: playVideoAsAudio.audioPlayer.getCurrentPosition().then((value) => value!.inSeconds.toDouble()),
-                                        onChanged: (value) {
-                                            setState(() {
-                                                videoContoller.updateProgressValue = value;
-                                                playVideoAsAudio.audioPlayer.seek(Duration(seconds: value.toInt()));
-                                            });
-                                            print(videoContoller.getProgrssValue);
-                                        }),
+                                child:  StreamBuilder<Duration>(
+                                    stream: playVideoAsAudio.audioPlayer.onPositionChanged,
+                                    builder: (context, snapshot) {
+                                        var position = snapshot.data?.inSeconds.toDouble() == videoContoller.getRealDuration.inSeconds.toDouble() ? Duration.zero: snapshot.data ?? Duration.zero ;
+                                        videoContoller.updateProgressValue = position.inSeconds.toDouble();
+                                        playVideoAsAudio.audioPlayer.onPlayerStateChanged.distinct().listen((playerState) {
+                                            if (position.inSeconds.toDouble() + 1 >= videoContoller.getRealDuration.inSeconds.toDouble()) {
+                                                print("it reach the end");
+                                                position = Duration.zero;
+                                                setState(() {
+                                                    playVideoAsAudio.audioPlayer.seek(Duration.zero);
+                                                    playVideoAsAudio.audioPlayer.pause();
+                                                });
+                                            }
+                                        });
+
+                                        if (position.inSeconds.toDouble() + 2 >= videoContoller.getRealDuration.inSeconds.toDouble()) {
+                                            position = Duration.zero;
+                                            videoContoller.updateProgressValue = position.inSeconds.toDouble();
+                                            videoContoller.setIsPlaying = false;
+                                            playVideoAsAudio.audioPlayer.seek(Duration.zero);
+                                            playVideoAsAudio.audioPlayer.pause();
+                                        }
+                                        return SliderTheme(
+                                            data: SliderThemeData(
+                                                overlayShape: SliderComponentShape.noOverlay
+                                            ),
+                                            child:videoContoller.getIsPlaying ? Slider(
+                                                label: "${videoContoller.getProgrssValue}",
+                                                divisions: (videoContoller.getRealDuration.inSeconds ~/ 5),
+                                                thumbColor: bottomBarColor,
+                                                activeColor: bottomBarColor,
+                                                min: 0.0,
+                                                max: videoContoller.getIsLive ? 2000 :videoContoller.getRealDuration.inSeconds.toDouble(),
+                                                value:videoContoller.getProgrssValue,
+                                                onChanged: (value) {
+                                                    setState(() {
+                                                        videoContoller.updateProgressValue = value;
+                                                        playVideoAsAudio.audioPlayer.seek(Duration(seconds: value.toInt()));
+                                                    });
+                                                }) : Slider(
+                                                label: "${videoContoller.getProgrssValue}",
+                                                divisions: (videoContoller.getRealDuration.inSeconds ~/ 5),
+                                                thumbColor: bottomBarColor,
+                                                activeColor: bottomBarColor,
+                                                value:0,
+                                                onChanged: (value) {
+                                                })
+                                        );
+                                    },
                                 )
-                                        )
-                                        )
-                    : const Text("")
+                            )
+                        )
+                    //: const Text("")
                 ],
             )
         );
+    }
+    //Future<void> updateIcon(VideoContoller videoContoller) async{
+    //              videoContoller.setIsPlaying = false;
+    //}
+    Widget getIconsPlaying(VideoContoller videoContoller, VideoContoller? currentVideoController){
+        try {
+            return currentVideoController!.getIsPlaying  ?
+                    Icon(Icons.pause, color: brandColor,)  :
+                    Icon(Icons.play_arrow, color: brandColor,);
+        } catch (e) {
+            return videoContoller.getIsPlaying  ?
+                    Icon(Icons.pause, color: brandColor,)  :
+                    Icon(Icons.play_arrow, color: brandColor,);
+        }
     }
     Widget videoInfo(double width, double height, VideoContoller videoContoller, PlayVideoAsAudio playVideoAsAudio){
         return Column(
