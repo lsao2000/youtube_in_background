@@ -14,18 +14,18 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
     int pageIndex = 0;
-    List<Widget> lstNavigationPages = [  HomePage(), const FavouritePage(), const LivesPage()];
+    List<Widget> lstNavigationPages = [const  HomePage(), const FavouritePage(), const LivesPage()];
     @override
     Widget build(BuildContext context) {
        double width = MediaQuery.of(context).size.width;
-       double height = MediaQuery.of(context).size.height;
+       //double height = MediaQuery.of(context).size.height;
         return Scaffold(
             appBar: AppBar(
                 backgroundColor: appBarColor,
                  actions: [
                              //Navigator.push(context, MaterialPageRoute(builder: (context) => SearchPage()));
                     IconButton(
-                        onPressed: (){ Navigator.push(context, MaterialPageRoute(builder: (context) => SearchPage()));  },
+                        onPressed: (){ Navigator.push(context, MaterialPageRoute(builder: (context) =>const  SearchPage()));  },
                         icon: Icon(Icons.search, color: Colors.white, size: width * 0.08,))
                  ],
                 title: Text(widget.title,

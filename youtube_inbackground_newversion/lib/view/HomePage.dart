@@ -1,5 +1,3 @@
-import 'package:audio_service/audio_service.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_inbackground_newversion/model/PlayVideAsAudio.dart';
@@ -13,18 +11,11 @@ class HomePage extends StatefulWidget {
 }
 class HomePageState extends State<HomePage> {
     VideoContoller? currentVideoController ;
-    PlayVideoAsAudio playVideoAsAudio = PlayVideoAsAudio();
+    final ScrollController _scrollController = ScrollController();
     @override
     void initState() {
         super.initState();
-        var ls = playVideoAsAudio.audioPlayer.onPositionChanged.listen((value) {
-            try {
-                currentVideoController?.updateProgressValue = value.inSeconds.toDouble() ;
-            } catch (e) {
-                print("cant update");
-            }
-        });
-
+        _scrollController.addListener(addMore);
     }
     @override
     Widget build(BuildContext context) {
@@ -52,9 +43,19 @@ class HomePageState extends State<HomePage> {
                                     width: width,
                                     height: height * 0.83,
                                     child: ListView.builder(
+                                        controller: _scrollController,
                                         itemCount:playVideoAsAudio.allLstVideos.length,
                                         itemBuilder: (context, index){
                                             VideoContoller videoContoller =playVideoAsAudio.allLstVideos[index];
+                                            playVideoAsAudio.audioPlayer.onPlayerComplete.listen((state){
+                                                setState(() {
+                                                    videoContoller.updateProgressValue = 0;
+                                                });
+                                                playVideoAsAudio.audioPlayer.seek(Duration.zero);
+                                                playVideoAsAudio.audioPlayer.stop();
+                                                videoContoller.setIsPlaying = false;
+                                                print("it reach the end in the init state");
+                                            });
                                             return InkWell(
                                                 child: Container(
                                                     padding: EdgeInsets.symmetric(vertical: height * 0.01, horizontal: width * 0.02),
@@ -135,38 +136,21 @@ class HomePageState extends State<HomePage> {
                             }
                             playVideoAsAudio.playAudio(currentVideoController!);
                         },
-                    child: videoContoller.getIsPlaying ? Icon(Icons.pause, color: brandColor,)
-                      : Icon(Icons.play_arrow, color: brandColor,)
+                    child: videoContoller.getIsPlaying ? Icon(Icons.pause, color: brandColor,) : Icon(Icons.play_arrow, color: brandColor,),
                     )
                 ),
                 videoContoller.getIsLive ? const Text("") :
-                        Positioned(
+                        videoContoller.getIsPlaying ? Positioned(
                             bottom: height * 0.007,
                             child: SizedBox(
                                 width: width * 0.47,
                                 child:  StreamBuilder<Duration>(
                                     stream: playVideoAsAudio.audioPlayer.onPositionChanged,
                                     builder: (context, snapshot) {
-                                        var position = snapshot.data?.inSeconds.toDouble() == videoContoller.getRealDuration.inSeconds.toDouble() ? Duration.zero: snapshot.data ?? Duration.zero ;
+                                        var position = snapshot.data?.inSeconds.toDouble() == videoContoller.getRealDuration.inSeconds.toDouble() ? Duration.zero : snapshot.data ?? Duration.zero ;
                                         videoContoller.updateProgressValue = position.inSeconds.toDouble();
-                                        playVideoAsAudio.audioPlayer.onPlayerStateChanged.distinct().listen((playerState) {
-                                            if (position.inSeconds.toDouble() + 1 >= videoContoller.getRealDuration.inSeconds.toDouble()) {
-                                                print("it reach the end");
-                                                position = Duration.zero;
-                                                setState(() {
-                                                    playVideoAsAudio.audioPlayer.seek(Duration.zero);
-                                                    playVideoAsAudio.audioPlayer.pause();
-                                                });
-                                            }
-                                        });
-
-                                        if (position.inSeconds.toDouble() + 2 >= videoContoller.getRealDuration.inSeconds.toDouble()) {
-                                            position = Duration.zero;
-                                            videoContoller.updateProgressValue = position.inSeconds.toDouble();
-                                            videoContoller.setIsPlaying = false;
-                                            playVideoAsAudio.audioPlayer.seek(Duration.zero);
-                                            playVideoAsAudio.audioPlayer.pause();
-                                        }
+                                        //playVideoAsAudio.audioPlayer.onPlayerStateChanged.listen((playerState) {
+                                        //});
                                         return SliderTheme(
                                             data: SliderThemeData(
                                                 overlayShape: SliderComponentShape.noOverlay
@@ -189,6 +173,8 @@ class HomePageState extends State<HomePage> {
                                                 divisions: (videoContoller.getRealDuration.inSeconds ~/ 5),
                                                 thumbColor: bottomBarColor,
                                                 activeColor: bottomBarColor,
+                                                min: 0,
+                                                max: videoContoller.getRealDuration.inSeconds.toDouble(),
                                                 value:0,
                                                 onChanged: (value) {
                                                 })
@@ -197,21 +183,18 @@ class HomePageState extends State<HomePage> {
                                 )
                             )
                         )
-                    //: const Text("")
+                    : const Text("")
                 ],
             )
         );
     }
-    //Future<void> updateIcon(VideoContoller videoContoller) async{
-    //              videoContoller.setIsPlaying = false;
-    //}
     Widget getIconsPlaying(VideoContoller videoContoller, VideoContoller? currentVideoController){
         try {
-            return currentVideoController!.getIsPlaying  ?
+            return currentVideoController!.getIsPlaying || currentVideoController.getProgrssValue +1 >= currentVideoController.getRealDuration.inSeconds.toDouble() ?
                     Icon(Icons.pause, color: brandColor,)  :
                     Icon(Icons.play_arrow, color: brandColor,);
         } catch (e) {
-            return videoContoller.getIsPlaying  ?
+            return videoContoller.getIsPlaying ||  videoContoller.getProgrssValue +1 >= videoContoller.getRealDuration.inSeconds.toDouble() ?
                     Icon(Icons.pause, color: brandColor,)  :
                     Icon(Icons.play_arrow, color: brandColor,);
         }
@@ -236,10 +219,16 @@ class HomePageState extends State<HomePage> {
                    Container(
                      padding: EdgeInsets.symmetric(horizontal: width * 0.005, vertical: height * 0.01),
                      child: Icon(Icons.circle, color: Colors.red ,size: width * 0.05),),
-                  const Text("Live", style: TextStyle(fontWeight: FontWeight.bold)),
+                   const Text("Live", style: TextStyle(fontWeight: FontWeight.bold)),
                 ],
                 ),
             ],
         );
+    }
+    void addMore() {
+        if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+
+            print("you reach the end of the scroll");
+        }
     }
 }
