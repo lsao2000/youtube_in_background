@@ -35,18 +35,26 @@ class PlayVideoAsAudio extends ChangeNotifier {
         return allLstVideos;
     }
     Future<void> addMoreVideo() async{
-        lstSearch!.nextPage();
-        List<Video> lstVideosInfo = lstSearch!.toList();
-        allLstVideos += lstVideosInfo.map((el) =>
-            VideoContoller(videoId: el.id.toString(),
+        try {
+          if(allLstVideos.length < 40){
+            lstSearch!.nextPage();
+            List<Video> lstVideosInfo = lstSearch!.toList();
+            allLstVideos += lstVideosInfo.map((el) =>
+              VideoContoller(videoId: el.id.toString(),
                 realDuration: el.duration ?? Duration.zero,
                 isLive: el.isLive,
                 titleVideo: el.title.toString(),
-                videoDuration: el.duration.toString(),
+                videoDuration:customDurationText(el.duration ?? Duration.zero),
                 videoChannel: el.channelId.toString(),
                 videoWatchers:customViewsText( el.engagement.viewCount))
-        ).toList();
-        notifyListeners();
+            ).toList();
+            notifyListeners();
+          }else{
+            print("enough");
+          }
+        } catch (e) {
+          print("error : ${e.toString()}");
+        }
     }
     String customDurationText(Duration duration){
         try {
@@ -83,17 +91,14 @@ class PlayVideoAsAudio extends ChangeNotifier {
             if( videoController.getIsLive){
                 var manifest = await yt.videos.streams.getHttpLiveStreamUrl(VideoId(videoId));
                 audioPlayer.play(UrlSource(manifest.toString()));
-                print("audio played");
                 return "work";
             }
             var manifest = await yt.videos.streamsClient.getManifest(videoId);
             var audioStreamInfo = manifest.audioOnly.withHighestBitrate();
             audioPlayer.play(UrlSource(audioStreamInfo.url.toString()));
-            print("audio played 2");
             return "work 2";
         }
         audioPlayer.pause();
-        print("audio paused");
         return "work 3";
     }
     Future<void> updateValueDuration(VideoContoller videoController) async {

@@ -11,11 +11,11 @@ class HomePage extends StatefulWidget {
 }
 class HomePageState extends State<HomePage> {
     VideoContoller? currentVideoController ;
+    //PlayVideoAsAudio playVideoAsAudio = PlayVideoAsAudio();
     final ScrollController _scrollController = ScrollController();
     @override
     void initState() {
         super.initState();
-        _scrollController.addListener(addMore);
     }
     @override
     Widget build(BuildContext context) {
@@ -47,6 +47,9 @@ class HomePageState extends State<HomePage> {
                                         itemCount:playVideoAsAudio.allLstVideos.length,
                                         itemBuilder: (context, index){
                                             VideoContoller videoContoller =playVideoAsAudio.allLstVideos[index];
+                                            _scrollController.addListener((){
+                                                addMore(playVideoAsAudio);
+                                            });
                                             playVideoAsAudio.audioPlayer.onPlayerComplete.listen((state){
                                                 setState(() {
                                                     videoContoller.updateProgressValue = 0;
@@ -54,7 +57,7 @@ class HomePageState extends State<HomePage> {
                                                 playVideoAsAudio.audioPlayer.seek(Duration.zero);
                                                 playVideoAsAudio.audioPlayer.stop();
                                                 videoContoller.setIsPlaying = false;
-                                                print("it reach the end in the init state");
+                                                print("the song it reach the end ");
                                             });
                                             return InkWell(
                                                 child: Container(
@@ -225,10 +228,10 @@ class HomePageState extends State<HomePage> {
             ],
         );
     }
-    void addMore() {
+    void addMore(PlayVideoAsAudio playVideoAsAudio) {
         if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-
             print("you reach the end of the scroll");
+            playVideoAsAudio.addMoreVideo();
         }
     }
 }
