@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:youtube_inbackground_newversion/service/notifcation_services.dart';
 
 class FavouritePage extends StatefulWidget {
     const FavouritePage({super.key});
@@ -7,8 +8,24 @@ class FavouritePage extends StatefulWidget {
 
 }
 class FavouritePageState extends State<FavouritePage> {
+    late final NotifcationServices notifcationServices;
+    @override
+      void initState() {
+        super.initState();
+        notifcationServices = NotifcationServices();
+      }
     @override
       Widget build(BuildContext context) {
-         return const Center(child: Text("Favourite Page"),);
+         return  Center(
+             child: FloatingActionButton(
+                 onPressed:(){
+                   try{
+                     print("pressed");
+                         notifcationServices.handleNotificationFunction();
+                   }catch(e){
+                    }
+                   
+                 },
+                 child: const Text("show notification"),), );
       }
 }
