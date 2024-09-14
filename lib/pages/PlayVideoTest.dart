@@ -17,7 +17,7 @@ class PlayVideoTestState extends State<PlayVideoTest> {
     //PlayVideoTestState({required this.audioHandler});
     String url = "https://iv.datura.network";
     late String youtubeUrl;
-    late Audioplayerhandler audioHandler ;
+    late AudioPlayerHandler audioHandler ;
     @override
       void initState() {
         scrapData();
@@ -83,9 +83,9 @@ class PlayVideoTestState extends State<PlayVideoTest> {
             yt.close();
         }
     }
-    Future<Audioplayerhandler> initialiseAudioHandler() async {
+    Future<AudioPlayerHandler> initialiseAudioHandler() async {
          audioHandler = await AudioService.init(
-             builder: () => Audioplayerhandler(),
+             builder: () => AudioPlayerHandler(),
             config: const AudioServiceConfig(
                 androidNotificationChannelId: 'com.example.youtube_in_background.channel.audio',
                 androidNotificationChannelName: 'Audio Channel',

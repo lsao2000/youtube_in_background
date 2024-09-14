@@ -3,17 +3,21 @@ import 'package:just_audio/just_audio.dart';
 
 class Audioplayerhandler extends BaseAudioHandler {
   final _player = AudioPlayer();
+  final _playlist = ConcatenatingAudioSource(children: []);
 
   Audioplayerhandler() {
+      _loadEmptyPlaylist();
+      //_notifyAudioHandlerAboutPlaybackEvents();
+      _listenForDurationChanges();
+
     _player.playbackEventStream.listen((event) {
       final playing = _player.playing;
       playbackState.add(playbackState.value.copyWith(
-        controls: [
-          MediaControl.rewind,
-          if (playing) MediaControl.pause else MediaControl.play,
-          MediaControl.stop,
-          MediaControl.fastForward,
-        ],
+          controls: [
+              MediaControl.skipToPrevious,
+              if (playing) MediaControl.pause else MediaControl.play,
+              MediaControl.skipToNext,
+          ],
         systemActions: const {
           MediaAction.seek,
         },
@@ -21,6 +25,7 @@ class Audioplayerhandler extends BaseAudioHandler {
         updatePosition: _player.position,
         bufferedPosition: _player.bufferedPosition,
         speed: _player.speed,
+        queueIndex: event.currentIndex,
         processingState: {
           ProcessingState.idle: AudioProcessingState.idle,
           ProcessingState.loading: AudioProcessingState.loading,
@@ -42,4 +47,74 @@ class Audioplayerhandler extends BaseAudioHandler {
   Future<void> stop() => _player.stop();
 
   Future<void> setUrl(String url) => _player.setUrl(url);
+
+  Future<void> _loadEmptyPlaylist() async {
+      try {
+          await _player.setAudioSource(_playlist);
+      } catch (e) {
+          print("Error: $e");
+      }
+  }
+  @override
+  Future<void> addQueueItems(List<MediaItem> mediaItems) async {
+      // manage Just Audio
+      final audioSource = mediaItems.map(_createAudioSource);
+      _playlist.addAll(audioSource.toList());
+      // notify system
+      final newQueue = queue.value..addAll(mediaItems);
+      //mediaItems.map((el) => el.)
+      queue.add(newQueue);
+
+  }
+  //
+  UriAudioSource _createAudioSource(MediaItem mediaItem) {
+      return AudioSource.uri(
+          Uri.parse(mediaItem.extras!['url'] as String),
+          tag: mediaItem,
+      );
+  }
+  void _notifyAudioHandlerAboutPlaybackEvents() {
+      _player.playbackEventStream.listen((PlaybackEvent event) {
+          final playing = _player.playing;
+          playbackState.add(playbackState.value.copyWith(
+                  controls: [
+                      MediaControl.skipToPrevious,
+                      if (playing) MediaControl.pause else MediaControl.play,
+                      MediaControl.stop,
+                      MediaControl.skipToNext,
+                  ],
+                  systemActions: const {
+                      MediaAction.seek,
+                  },
+                  //androidCompactActionIndices: const [0, 1, 2],
+                  processingState: const {
+                      ProcessingState.idle: AudioProcessingState.idle,
+                      ProcessingState.loading: AudioProcessingState.loading,
+                      ProcessingState.buffering: AudioProcessingState.buffering,
+                      ProcessingState.ready: AudioProcessingState.ready,
+                      ProcessingState.completed: AudioProcessingState.completed,
+                  }[_player.processingState]!,
+                  playing: playing,
+                  updatePosition: _player.position,
+                  bufferedPosition: _player.bufferedPosition,
+                  speed: _player.speed,
+                  queueIndex: event.currentIndex,
+                ));
+      });
+  }
+  @override
+  Future<void> seek(Duration position) => _player.seek(position);
+
+  void _listenForDurationChanges() {
+      _player.durationStream.listen((duration) {
+          final index = _player.currentIndex;
+          final newQueue = queue.value;
+          if (index == null || newQueue.isEmpty) return;
+          final oldMediaItem = newQueue[index];
+          final newMediaItem = oldMediaItem.copyWith(duration: duration);
+          newQueue[index] = newMediaItem;
+          queue.add(newQueue);
+          mediaItem.add(newMediaItem);
+      });
+  }
 }

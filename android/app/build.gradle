@@ -1,3 +1,8 @@
+buildscript {
+    dependencies {
+        classpath("com.android.tools.build:gradle:7.3.0")
+    }
+}
 plugins {
     id "com.android.application"
     id "kotlin-android"
@@ -52,7 +57,6 @@ android {
         }
     }
 }
-
 flutter {
     source = "../.."
 }

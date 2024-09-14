@@ -7,7 +7,7 @@ class VideoContoller {
     late final String _videoChannel;
     late final  bool _isLive ;
     int _currentDurationPositionInSecond = 0;
-    double _progressValue = 0;
+    late double _progressValue;
     bool _isPlaying = false;
     VideoContoller({required String videoId, required String titleVideo , required String videoWatchers , required String videoDuration, required String videoChannel, required bool isLive, required Duration realDuration})
             :_videoId = videoId, _titleVideo = titleVideo, _videoChannel = videoChannel, _videoDuration = videoDuration, _videoWatches = videoWatchers, _isLive = isLive, _realDuration = realDuration;

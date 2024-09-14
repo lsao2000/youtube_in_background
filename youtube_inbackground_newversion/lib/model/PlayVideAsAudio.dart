@@ -1,17 +1,22 @@
+import 'package:audio_service/audio_service.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:youtube_inbackground_newversion/model/VideoContoller.dart';
+import 'package:youtube_inbackground_newversion/service/my_audio_handler.dart';
 class PlayVideoAsAudio extends ChangeNotifier {
     YoutubeExplode yt = YoutubeExplode();
     AudioPlayer audioPlayer = AudioPlayer();
     VideoSearchList? lstSearch ;
+    late MyAudioHandler myAudioHandler ;
     // The 3 line below is a Singleton for manage global variable for data accessing.
     static  PlayVideoAsAudio? _instance;
     int runtimeTime = 0;
     PlayVideoAsAudio._internalInstance();
+
     factory  PlayVideoAsAudio(){
-        return _instance ?? PlayVideoAsAudio._internalInstance();
+        _instance ??= PlayVideoAsAudio._internalInstance();
+        return _instance!;
     }
 
     List<VideoContoller> allLstVideos = [];
@@ -33,6 +38,21 @@ class PlayVideoAsAudio extends ChangeNotifier {
         ).toList();
         notifyListeners();
         return allLstVideos;
+    }
+    Future<void> initiliazeAudioHandler() async{
+        try {
+            myAudioHandler = await AudioService.init(
+                builder: () => MyAudioHandler(),
+                config: const AudioServiceConfig(
+                    androidNotificationChannelId: 'com.mycompany.myapp.audio',
+                    androidNotificationChannelName: 'Audio Service Demo',
+                    androidNotificationOngoing: true,
+                    androidStopForegroundOnPause: true,
+                )
+            );
+        } catch (e) {
+            print("error in initiliaze audio service${e.toString()}");
+        }
     }
     Future<void> addMoreVideo() async{
         try {
@@ -85,21 +105,48 @@ class PlayVideoAsAudio extends ChangeNotifier {
         }
         return "$views Md";
     }
-    Future<String> playAudio(VideoContoller videoController) async {
-        var videoId = videoController.getVideoId;
-        if (videoController.getIsPlaying) {
-            if( videoController.getIsLive){
-                var manifest = await yt.videos.streams.getHttpLiveStreamUrl(VideoId(videoId));
-                audioPlayer.play(UrlSource(manifest.toString()));
-                return "work";
+    Future<bool> playAudio(VideoContoller videoController) async {
+        try {
+            var videoId = videoController.getVideoId;
+            if (videoController.getIsPlaying) {
+                String url = "";
+                if( videoController.getIsLive){
+                    var manifest = await yt.videos.streams.getHttpLiveStreamUrl(VideoId(videoId));
+                    url = manifest.toString();
+                }
+                var manifest = await yt.videos.streamsClient.getManifest(videoId);
+                var audioStreamInfo = manifest.audioOnly.withHighestBitrate();
+                url = audioStreamInfo.url.toString();
+                var video = await yt.videos.get("https://www.youtube.com/watch?v=${videoId}");
+                //await initiliazeAudioHandler();
+                myAudioHandler.setUrl(url);
+                List<Map<String, String>> music = [{
+                    'id': video.id.toString(),
+                    'title': video.title,
+                    'album': video.author,
+                    'url':"https://img.youtube.com/vi/${video.id}/default.jpg"
+                }];
+                List<MediaItem> mediaItems = music
+                        .map( (audio) => MediaItem(
+                                id: audio['id'] ?? '',
+                                title: audio['title'] ?? '',
+                                album: audio['album'] ?? '',
+                                extras: {'url': url},
+                                artUri: Uri.parse(audio['url'] ?? ''),
+                                displaySubtitle: video.description
+                        )).toList();
+                myAudioHandler.addQueueItems(mediaItems);
+                myAudioHandler.play();
+                return true;
+                //audioPlayer.play(UrlSource(audioStreamInfo.url.toString()));
             }
-            var manifest = await yt.videos.streamsClient.getManifest(videoId);
-            var audioStreamInfo = manifest.audioOnly.withHighestBitrate();
-            audioPlayer.play(UrlSource(audioStreamInfo.url.toString()));
-            return "work 2";
+            myAudioHandler.pause();
+            return false;
+            //audioPlayer.pause();
+        } catch (e) {
+            print( "some error in initialize audio service ${e.toString()}");
+            return false;
         }
-        audioPlayer.pause();
-        return "work 3";
     }
     Future<void> updateValueDuration(VideoContoller videoController) async {
         //audioPlayer.onPositionChanged.listen((value){

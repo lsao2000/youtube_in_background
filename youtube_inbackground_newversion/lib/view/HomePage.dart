@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_inbackground_newversion/model/PlayVideAsAudio.dart';
 import 'package:youtube_inbackground_newversion/model/VideoContoller.dart';
@@ -22,6 +23,7 @@ class HomePageState extends State<HomePage> {
         double width = MediaQuery.sizeOf(context).width;
         double height = MediaQuery.sizeOf(context).height;
         return Consumer<PlayVideoAsAudio>(builder: (context, playVideoAsAudio, child){
+            playVideoAsAudio.initiliazeAudioHandler();
             if (int.parse(playVideoAsAudio.runtimeTime.toString()) == 0)  {
                 return  Center(child: Text("Search Something", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: placeHolderColor),),) ;
             }
@@ -50,15 +52,16 @@ class HomePageState extends State<HomePage> {
                                             _scrollController.addListener((){
                                                 addMore(playVideoAsAudio);
                                             });
-                                            playVideoAsAudio.audioPlayer.onPlayerComplete.listen((state){
-                                                setState(() {
-                                                    videoContoller.updateProgressValue = 0;
+                                                playVideoAsAudio.myAudioHandler.getPlayer.playerStateStream.listen((state){
+                                                    if (state.processingState == ProcessingState.completed) {
+                                                        setState(() {
+                                                            videoContoller.updateProgressValue = 0;
+                                                        });
+                                                        playVideoAsAudio.myAudioHandler.getPlayer.seek(Duration.zero);
+                                                        playVideoAsAudio.myAudioHandler.getPlayer.pause();
+                                                        videoContoller.setIsPlaying = false;
+                                                    }
                                                 });
-                                                playVideoAsAudio.audioPlayer.seek(Duration.zero);
-                                                playVideoAsAudio.audioPlayer.stop();
-                                                videoContoller.setIsPlaying = false;
-                                                print("the song it reach the end ");
-                                            });
                                             return InkWell(
                                                 child: Container(
                                                     padding: EdgeInsets.symmetric(vertical: height * 0.01, horizontal: width * 0.02),
@@ -120,21 +123,24 @@ class HomePageState extends State<HomePage> {
                             if (currentVideoController == null) {
                                 setState(() {
                                     currentVideoController = videoContoller;
-                                    currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
+                                    currentVideoController!.setIsPlaying = playVideoAsAudio.myAudioHandler.getPlayer.playing;
+                                    //currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
                                 });
                             }
-                            // You play another audio after first time.
+                            //// You play another audio after first time.
                             else if(currentVideoController != videoContoller){
                                 setState(() {
                                     currentVideoController!.setIsPlaying = false;
-                                    videoContoller.setIsPlaying = !videoContoller.getIsPlaying;
+                                    //videoContoller.setIsPlaying = !videoContoller.getIsPlaying;
+                                    videoContoller.setIsPlaying =  playVideoAsAudio.myAudioHandler.getPlayer.playing;
                                     currentVideoController = videoContoller;
                                 });
                             }
-                            // You play and pause the same audio.
+                            //// You play and pause the same audio.
                             else{
                                 setState(() {
-                                    currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
+                                    //currentVideoController!.setIsPlaying = !currentVideoController!.getIsPlaying;
+                                    currentVideoController!.setIsPlaying = playVideoAsAudio.myAudioHandler.getPlayer.playing;
                                 });
                             }
                             playVideoAsAudio.playAudio(currentVideoController!);
@@ -148,7 +154,8 @@ class HomePageState extends State<HomePage> {
                             child: SizedBox(
                                 width: width * 0.47,
                                 child:  StreamBuilder<Duration>(
-                                    stream: playVideoAsAudio.audioPlayer.onPositionChanged,
+                                    stream: playVideoAsAudio.myAudioHandler.getPlayer.positionStream,
+                                    //stream: playVideoAsAudio.audioPlayer.onPositionChanged,
                                     builder: (context, snapshot) {
                                         var position = snapshot.data?.inSeconds.toDouble() == videoContoller.getRealDuration.inSeconds.toDouble() ? Duration.zero : snapshot.data ?? Duration.zero ;
                                         videoContoller.updateProgressValue = position.inSeconds.toDouble();
@@ -165,11 +172,12 @@ class HomePageState extends State<HomePage> {
                                                 activeColor: bottomBarColor,
                                                 min: 0.0,
                                                 max: videoContoller.getIsLive ? 2000 :videoContoller.getRealDuration.inSeconds.toDouble(),
-                                                value:videoContoller.getProgrssValue,
+                                                value:playVideoAsAudio.myAudioHandler.getPlayer.position.inSeconds.toDouble(),
                                                 onChanged: (value) {
                                                     setState(() {
                                                         videoContoller.updateProgressValue = value;
-                                                        playVideoAsAudio.audioPlayer.seek(Duration(seconds: value.toInt()));
+                                                        playVideoAsAudio.myAudioHandler.getPlayer.seek(Duration(seconds: value.toInt()));
+                                                        //playVideoAsAudio.audioPlayer.seek(Duration(seconds: value.toInt()));
                                                     });
                                                 }) : Slider(
                                                 label: "${videoContoller.getProgrssValue}",
