@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:youtube_inbackground_newversion/controller/provider/playlist_provider.dart';
 import 'package:youtube_inbackground_newversion/model/PlayVideAsAudio.dart';
 import 'package:youtube_inbackground_newversion/view/MainPage.dart';
+
 //import 'package:youtube_inbackground_newversion/view/test.dart';
 void main() {
   runApp(
-     //const MyApp()
-      ChangeNotifierProvider(create:(_)=> PlayVideoAsAudio() ,
-          child:const MyApp(),)
-      );
+      //const MyApp()
+      ChangeNotifierProvider(
+    create: (_) => PlayVideoAsAudio(),
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -17,17 +20,20 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PlayVideoAsAudio()),
+        ChangeNotifierProvider(create: (ctx) => PlaylistProvider()),
+      ],
+      child: MaterialApp(
         debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const MainPage(title: 'Y&B'),
       ),
-      //home: const TestBackgroundAudio(),
-      home: const MainPage(title: 'Y&B'),
     );
   }
 }
-
-
