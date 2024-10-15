@@ -26,7 +26,6 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     //double height = MediaQuery.of(context).size.height;
-    PlaylistProvider playlistProvider = Provider.of<PlaylistProvider>(context);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: appBarColor,
@@ -50,14 +49,13 @@ class _MainPageState extends State<MainPage> {
         ),
       ),
       body: lstNavigationPages[pageIndex],
-      floatingActionButton: playlistProvider.showFloating ? floatingBar() : null,
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite), label: "Favourite"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.playlist_add), label: "Playlist")
+              icon: Icon(Icons.playlist_play), label: "Playlist")
         ],
         currentIndex: pageIndex,
         backgroundColor: bottomBarColor,
@@ -68,17 +66,6 @@ class _MainPageState extends State<MainPage> {
             pageIndex = value;
           });
         },
-      ),
-    );
-  }
-
-  Widget floatingBar() {
-    return Container(
-        color: Colors.pink,
-      child: Row(
-        children: [
-            Text("help"),
-        ],
       ),
     );
   }
