@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:youtube_inbackground_newversion/controller/provider/playlist_provider.dart';
+//import 'package:provider/provider.dart';
+//import 'package:youtube_inbackground_newversion/controller/provider/playlist_provider.dart';
 import 'package:youtube_inbackground_newversion/utils/colors.dart';
 import 'package:youtube_inbackground_newversion/view/FavouritePage.dart';
 import 'package:youtube_inbackground_newversion/view/HomePage.dart';
-import 'package:youtube_inbackground_newversion/view/LivesPage.dart';
 import 'package:youtube_inbackground_newversion/view/SearchPage.dart';
 
 class MainPage extends StatefulWidget {
@@ -20,7 +19,7 @@ class _MainPageState extends State<MainPage> {
   List<Widget> lstNavigationPages = [
     const HomePage(),
     const FavouritePage(),
-    const LivesPage()
+    //const LivesPage()
   ];
   @override
   Widget build(BuildContext context) {
@@ -54,8 +53,8 @@ class _MainPageState extends State<MainPage> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite), label: "Favourite"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.playlist_play), label: "Playlist")
+          //BottomNavigationBarItem(
+          //    icon: Icon(Icons.playlist_play), label: "Playlist")
         ],
         currentIndex: pageIndex,
         backgroundColor: bottomBarColor,

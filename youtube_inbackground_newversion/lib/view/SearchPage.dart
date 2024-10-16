@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:youtube_inbackground_newversion/controller/search_history_controller.dart';
-import 'package:youtube_inbackground_newversion/model/PlayVideAsAudio.dart';
+import 'package:youtube_inbackground_newversion/controller/localDatabase/search_history_controller.dart';
+import 'package:youtube_inbackground_newversion/controller/provider/play_video_as_audio.dart';
 import 'package:youtube_inbackground_newversion/model/search_history.dart';
 import 'package:youtube_inbackground_newversion/utils/colors.dart';
 
@@ -18,8 +18,12 @@ class SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    searchHistoryController = SearchHistoryController();
-    refreshAllSearch();
+    try {
+      searchHistoryController = SearchHistoryController();
+      refreshAllSearch();
+    } catch (e) {
+      print(e.toString());
+    }
   }
 
   @override

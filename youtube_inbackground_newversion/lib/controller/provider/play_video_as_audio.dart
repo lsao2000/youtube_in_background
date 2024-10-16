@@ -1,9 +1,8 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-import 'package:youtube_inbackground_newversion/model/VideoContoller.dart';
 import 'package:youtube_inbackground_newversion/service/my_audio_handler.dart';
-
+import 'package:youtube_inbackground_newversion/model/VideoContoller.dart';
 class PlayVideoAsAudio extends ChangeNotifier {
   YoutubeExplode yt = YoutubeExplode();
   VideoSearchList? lstSearch;

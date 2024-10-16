@@ -20,7 +20,9 @@ class PlaylistProvider extends ChangeNotifier {
     while (playlistsList.length < 20 && s.nextPage() != null) {
       try {
         SearchList? result = await s.nextPage();
-        playlistsList.addAll(result!.whereType<SearchPlaylist>().toList());
+        if (result!.whereType<SearchPlaylist>().toList().isNotEmpty) {
+          playlistsList.addAll(result.whereType<SearchPlaylist>().toList());
+        }
       } catch (e) {
         print("error");
       }
@@ -28,23 +30,28 @@ class PlaylistProvider extends ChangeNotifier {
     List<Map<String, String>> lstInfo = [];
     List<String> lsOne =
         playlistsList.toString().split("SearchResult.playlist");
+    lsOne.removeAt(0);
+    //print("length ${lsOne.length}");
     for (var i = 0; i < lsOne.length; i++) {
       List<String> lsTwo = lsOne[i].toString().split(",");
+      //print(lsTwo.toString());
       String videoCount = "";
       String title = "";
-      for (var i = 0; i < lsTwo.length; i++) {
-        if (lsTwo[i].contains("videoCount")) {
-          videoCount = lsTwo[i];
-        } else if (lsTwo[i].contains("title:")) {
-          title = lsTwo[i];
+      for (var j = 0; j < lsTwo.length; j++) {
+        if (lsTwo[j].contains("videoCount")) {
+          videoCount = lsTwo[j];
+        } else if (lsTwo[j].contains("title:")) {
+          title = lsTwo[j];
         }
       }
-      lstInfo.add({"title": title, "videoCount": videoCount});
+      Map<String, String> data = {"title": title, "videoCount": videoCount};
+      print(data);
+      lstInfo.add(data);
     }
 
     //var playlists = s.whereType<SearchPlaylist>().toList();
 
-    print("length : ${playlistsList.length}");
+    //print("length : ${playlistsList.length}");
     print(lstInfo);
     return playlistsList;
   }
