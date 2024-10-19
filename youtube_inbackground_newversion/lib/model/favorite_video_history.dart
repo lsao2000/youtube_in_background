@@ -1,14 +1,15 @@
 class FavoriteVideoHistory {
-  late String titleVideo;
   late String videoId;
-  late Duration duration;
+  late String titleVideo;
   late String videoWatchers;
-  late String imgUrl;
-  bool isPlaying = false;
-  late bool isLive;
   late String videoDuration;
-  late String videoChannel;
   late Duration realDuration;
+  late String videoChannel;
+  late bool isLive;
+  late double progressValue;
+  late String imgUrl;
+  int _currentDurationPositionInSecond = 0;
+  bool isPlaying = false;
   FavoriteVideoHistory({
     required this.titleVideo,
     required this.videoId,
@@ -21,6 +22,16 @@ class FavoriteVideoHistory {
   });
   set updateIsPlaying(bool value) {
     isPlaying = value;
+  }
+
+  int get getCurrentDurationPositionInSecond => _currentDurationPositionInSecond;
+
+  set updateCurrentDurationPosition(int positionInSecond) {
+    _currentDurationPositionInSecond = positionInSecond;
+  }
+
+  set updateProgressValue(double value) {
+    progressValue = value;
   }
 
   Map<String, dynamic> toJson() {
@@ -42,7 +53,7 @@ class FavoriteVideoHistory {
         videoId: data["videoId"],
         videoWatchers: data["videoWatchers"],
         imgUrl: data["imgUrl"],
-        isLive: data["isLive"]== 1 ? true : false,
+        isLive: data["isLive"] == 1 ? true : false,
         videoDuration: data["videoDuration"],
         videoChannel: data["videoChannel"],
         realDuration: Duration(seconds: data["realDuration"]));

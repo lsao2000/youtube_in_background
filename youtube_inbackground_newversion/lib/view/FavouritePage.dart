@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_inbackground_newversion/controller/localDatabase/search_history_controller.dart';
+import 'package:youtube_inbackground_newversion/controller/provider/play_favorite_audio.dart';
 import 'package:youtube_inbackground_newversion/controller/provider/play_video_as_audio.dart';
-import 'package:youtube_inbackground_newversion/model/VideoContoller.dart';
 import 'package:youtube_inbackground_newversion/model/favorite_video_history.dart';
 import 'package:youtube_inbackground_newversion/utils/colors.dart';
 
@@ -13,19 +13,21 @@ class FavouritePage extends StatefulWidget {
 }
 
 class FavouritePageState extends State<FavouritePage> {
+  FavoriteVideoHistory? currentFavoriteVideoHistory;
   late SearchHistoryController searchHistoryController;
   List<FavoriteVideoHistory> allFavoriteHistory = [];
   @override
   void initState() {
     super.initState();
     searchHistoryController = SearchHistoryController();
-    getData();
+    refreshData();
   }
 
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.sizeOf(context).width;
     double height = MediaQuery.sizeOf(context).height;
+    //PlayFavoriteAudio playFavoriteAudio = Provider.of<PlayFavoriteAudio>(context);
     PlayVideoAsAudio playVideoAsAudio = Provider.of<PlayVideoAsAudio>(context);
     return ListView.builder(
         itemCount: allFavoriteHistory.length,
@@ -35,15 +37,18 @@ class FavouritePageState extends State<FavouritePage> {
               padding: EdgeInsets.symmetric(
                   vertical: height * 0.01, horizontal: width * 0.02),
               child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                    vidoeImageInfo(width, height, favoriteHistory),
-                    videoInfo(width, height, favoriteHistory)
+                  vidoeImageInfo(
+                      width, height, favoriteHistory, playVideoAsAudio),
+                  videoInfo(width, height, favoriteHistory)
                 ],
               ));
         });
   }
-  Widget videoInfo(double width, double height,FavoriteVideoHistory favoriteHistory ) {
+
+  Widget videoInfo(
+      double width, double height, FavoriteVideoHistory favoriteHistory) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,8 +92,8 @@ class FavouritePageState extends State<FavouritePage> {
     );
   }
 
-  Widget vidoeImageInfo(
-      double width, double height, FavoriteVideoHistory favoriteHistory) {
+  Widget vidoeImageInfo(double width, double height,
+      FavoriteVideoHistory favoriteHistory, PlayVideoAsAudio playVideoAsAudio) {
     return SizedBox(
       child: Stack(
         alignment: Alignment.center,
@@ -133,44 +138,43 @@ class FavouritePageState extends State<FavouritePage> {
                 shape: const CircleBorder(),
               ),
               onPressed: () {
-                print("pressed");
-                // posibilities of pause and play button in favoriteHistory.
+                playVideoAsAudio.playFavoriteAudio(favoriteHistory);
+                // posibilities of pause and play button in videoContoller.
                 // You play audio for the first time.
-                //if (currentVideoController == null) {
-                //  setState(() {
-                //    currentVideoController = favoriteHistory;
-                //    currentVideoController!.setIsPlaying =
-                //        !currentVideoController!.getIsPlaying;
-                //  });
-                //}
+                if (currentFavoriteVideoHistory == null) {
+                  setState(() {
+                    currentFavoriteVideoHistory = favoriteHistory;
+                    currentFavoriteVideoHistory!.isPlaying =
+                        !currentFavoriteVideoHistory!.isPlaying;
+                  });
+                }
                 //// You play another audio after first time.
-                //else if (currentVideoController != favoriteHistory) {
-                //  setState(() {
-                //    currentVideoController!.setIsPlaying = false;
-                //    favoriteHistory.setIsPlaying = !videoContoller.getIsPlaying;
-                //    currentVideoController = favoriteHistory;
-                //  });
-                //}
+                else if (currentFavoriteVideoHistory != favoriteHistory) {
+                  setState(() {
+                    currentFavoriteVideoHistory!.isPlaying = false;
+                    favoriteHistory.isPlaying = !favoriteHistory.isPlaying;
+                    currentFavoriteVideoHistory = favoriteHistory;
+                  });
+                }
                 // You play and pause the same audio.
-                //else {
-                //  setState(() {
-                //    currentVideoController!.setIsPlaying =
-                //        !currentVideoController!.getIsPlaying;
-                //  });
-                //}
-                //playVideoAsAudio.playAudio(currentVideoController!);
-                //if (currentVideoController
-                //        ?.getCurrentDurationPositionInSecond ==
-                //    0) {
-                //  print("listen");
-                //  playVideoAsAudio.myAudioHandler.getPlayer.playingStream
-                //      .listen((state) {
-                //    currentVideoController!.setIsPlaying = state;
-                //  });
-                //  currentVideoController?.updateCurrentDurationPosition = 1;
-                //} else {
-                //  print("already listning");
-                //}
+                else {
+                  setState(() {
+                    currentFavoriteVideoHistory!.isPlaying =
+                        !currentFavoriteVideoHistory!.isPlaying;
+                  });
+                }
+                playVideoAsAudio.playFavoriteAudio(currentFavoriteVideoHistory!);
+                if (currentFavoriteVideoHistory?.getCurrentDurationPositionInSecond == 0) {
+                  //print("listen");
+                  playVideoAsAudio.myAudioHandler.getPlayer.playingStream
+                      .listen((state) {
+                    currentFavoriteVideoHistory!.isPlaying = state;
+                  });
+                  currentFavoriteVideoHistory?.updateCurrentDurationPosition = 1;
+                } else {
+                  print("already listning");
+                }
+
               },
               child: favoriteHistory.isPlaying
                   ? Icon(
@@ -185,18 +189,115 @@ class FavouritePageState extends State<FavouritePage> {
           ),
           //Builder(
           //  builder: (ctx) {
-          //    return favoriteHistory.getIsLive
-          //        ? const Text("")
-          //        : audioSliderBar(
-          //            height, width, playVideoAsAudio, favoriteHistory);
+          //    return favoriteHistory.isLive ? const Text("") :
+          //            const Text("not live");
+          //            //audioSliderBar(height, width, playVideoAsAudio, favoriteHistory);
           //  },
           //),
+          Positioned(
+            top: height * 0.01,
+            right: width * 0.02,
+            child: InkWell(
+              onTap: () {
+                String videoId = favoriteHistory.videoId;
+                searchHistoryController.deleteFavoriteHistory(videoId: videoId);
+                setState(() {
+                  refreshData();
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    color: Colors.deepOrange),
+                child: Icon(
+                  Icons.remove,
+                  color: brandColor,
+                ),
+              ),
+            ),
+          )
         ],
       ),
     );
   }
 
-  Future<void> getData() async {
+  Widget audioSliderBar(
+      double height,
+      double width,
+      PlayVideoAsAudio playVideoAsAudio,
+      FavoriteVideoHistory favoriteVideoHistory) {
+    return Builder(
+      builder: (ctx) {
+        return favoriteVideoHistory.isPlaying
+            ? Positioned(
+                bottom: height * 0.007,
+                child: SizedBox(
+                  width: width * 0.47,
+                  child: StreamBuilder<Duration>(
+                    stream: playVideoAsAudio
+                        .myAudioHandler.getPlayer.positionStream,
+                    builder: (context, snapshot) {
+                      var position = snapshot.data?.inSeconds.toDouble() ==
+                              favoriteVideoHistory.realDuration.inSeconds
+                                  .toDouble()
+                          ? Duration.zero
+                          : snapshot.data ?? Duration.zero;
+                      favoriteVideoHistory.updateProgressValue =
+                          position.inSeconds.toDouble();
+                      return SliderTheme(
+                          data: SliderThemeData(
+                              overlayShape: SliderComponentShape.noOverlay),
+                          child: favoriteVideoHistory.isPlaying
+                              ? Slider(
+                                  label:
+                                      "${favoriteVideoHistory.progressValue}",
+                                  divisions: (favoriteVideoHistory
+                                          .realDuration.inSeconds ~/
+                                      5),
+                                  thumbColor: bottomBarColor,
+                                  activeColor: bottomBarColor,
+                                  min: 0.0,
+                                  max: favoriteVideoHistory.isLive
+                                      ? 2000
+                                      : favoriteVideoHistory
+                                          .realDuration.inSeconds
+                                          .toDouble(),
+                                  value: playVideoAsAudio.myAudioHandler
+                                      .getPlayer.position.inSeconds
+                                      .toDouble(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      favoriteVideoHistory.updateProgressValue =
+                                          value;
+                                      playVideoAsAudio.myAudioHandler.getPlayer
+                                          .seek(
+                                              Duration(seconds: value.toInt()));
+                                    });
+                                  })
+                              : Slider(
+                                  label:
+                                      "${favoriteVideoHistory.progressValue}",
+                                  divisions: (favoriteVideoHistory
+                                          .realDuration.inSeconds ~/
+                                      5),
+                                  thumbColor: bottomBarColor,
+                                  activeColor: bottomBarColor,
+                                  min: 0,
+                                  max: favoriteVideoHistory
+                                      .realDuration.inSeconds
+                                      .toDouble(),
+                                  value: 0,
+                                  onChanged: (value) {}));
+                    },
+                  ),
+                ),
+              )
+            : const Text("");
+      },
+    );
+  }
+
+  Future<void> refreshData() async {
     var data = await searchHistoryController.getAllFavorite();
     setState(() {
       allFavoriteHistory = data;

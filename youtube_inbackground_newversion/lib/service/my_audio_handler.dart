@@ -38,6 +38,10 @@ class MyAudioHandler extends BaseAudioHandler{
     AudioPlayer get getPlayer => _player;
     // This code for playing audio with the given url.
     Future<void> setUrl(String url) => _player.setUrl(url);
+    addSomething(){
+
+    }
+
     @override
     Future<void> play() => _player.play();
     @override

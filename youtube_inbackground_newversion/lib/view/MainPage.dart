@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:youtube_inbackground_newversion/utils/colors.dart';
 import 'package:youtube_inbackground_newversion/view/FavouritePage.dart';
 import 'package:youtube_inbackground_newversion/view/HomePage.dart';
+import 'package:youtube_inbackground_newversion/view/LivesPage.dart';
 import 'package:youtube_inbackground_newversion/view/SearchPage.dart';
 
 class MainPage extends StatefulWidget {
@@ -50,7 +51,7 @@ class _MainPageState extends State<MainPage> {
       body: lstNavigationPages[pageIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "home"),
+         BottomNavigationBarItem(icon: Icon(Icons.home), label: "home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite), label: "Favourite"),
           //BottomNavigationBarItem(

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:sqflite/sqflite.dart';
 import 'package:youtube_inbackground_newversion/model/favorite_video_history.dart';
 import 'package:youtube_inbackground_newversion/model/search_history.dart';
@@ -42,9 +43,9 @@ class SearchHistoryController {
       //print("not added yet");
       await createDatabase();
       await database.insert(favoriteTableName, favoriteVideoHistory.toJson());
-      print("added succesfully");
+      database.close();
     } catch (e) {
-      print("some error in add to favorite ${e.toString()}");
+      log(e.toString());
     }
   }
 
@@ -60,6 +61,7 @@ class SearchHistoryController {
     if (!notHere) {
       //database.
       await database.insert(searchTableName, searchHistory.toJson());
+      database.close();
     }
   }
 
@@ -67,8 +69,19 @@ class SearchHistoryController {
     await createDatabase();
     try {
       database.delete(searchTableName, where: "search_id = ?", whereArgs: [id]);
+      database.close();
     } catch (e) {
       print("Something went wrong ${e.toString()}");
+    }
+  }
+
+  Future<void> deleteFavoriteHistory({required String videoId}) async {
+    try {
+      await createDatabase();
+      database.delete(favoriteTableName,
+          where: "videoId = ?", whereArgs: [videoId]);
+    } on DatabaseException catch (e) {
+        log(e.toString());
     }
   }
 
@@ -106,7 +119,7 @@ class SearchHistoryController {
                 "realDuration": el["realDuration"],
               }))
           .toList();
-          print("length : ${allData.length}");
+      print("length : ${allData.length}");
       return allData;
     } catch (e) {
       print("error in getting data of favorite ${e.toString()}");
