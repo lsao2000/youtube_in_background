@@ -12,8 +12,6 @@ class LivesPage extends StatefulWidget{
 }
 class LivesPageState extends State<LivesPage>{
    String? _audioUrl;
-   //String apiKey = 'AIzaSyDgqTH_UQhL0Uijj5euCEVnw-P7G-4rDrg';
-   //String channelId = 'UChs0pSaEoNLV4mevBFGaoKA';
    late AudioPlayer _audioPlayer;
    @override
    void initState() {
