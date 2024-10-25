@@ -2,18 +2,27 @@ import 'dart:developer';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:youtube_inbackground_newversion/controller/provider/play_video_as_audio.dart';
 import 'package:youtube_inbackground_newversion/model/favorite_video_history.dart';
-import 'package:youtube_inbackground_newversion/service/favorite_history_audio_handler.dart';
+import 'package:youtube_inbackground_newversion/service/my_audio_handler.dart';
 
 class PlayFavoriteAudio extends ChangeNotifier {
   YoutubeExplode yt = YoutubeExplode();
-  late FavoriteHistoryAudioHandler  audioHandler;
+  late MyAudioHandler audioHandler;
   PlayFavoriteAudio() {
     //initilizeAudioHandler();
   }
-  Future<void> initilizeAudioHandler() async {
+  Future<void> initilizeAudioHandler(MyAudioHandler myAudioHandler) async {
     try {
-        audioHandler = await initAudioService();
+      audioHandler = await AudioService.init(
+          builder: () => MyAudioHandler(),
+          config: const AudioServiceConfig(
+            androidNotificationChannelId: 'com.example.youtube_inbackground_newversion',
+            androidNotificationChannelName: 'Audio Service',
+            androidNotificationOngoing: true,
+            androidStopForegroundOnPause: true,
+          ));
+      //audioHandler = myAudioHandler;
       audioHandler.playbackState.listen((state) {
         notifyListeners();
         log("initiliazing succes");
@@ -26,7 +35,7 @@ class PlayFavoriteAudio extends ChangeNotifier {
   }
 
   Future<void> playAudio(FavoriteVideoHistory favoriteVideoHistory,
-      ) async {
+      PlayVideoAsAudio playVideoAsAudio) async {
     try {
       String videoId = favoriteVideoHistory.videoId;
       if (favoriteVideoHistory.isPlaying) {
@@ -44,7 +53,7 @@ class PlayFavoriteAudio extends ChangeNotifier {
           url = audioStreamInfo.url.toString();
         }
         var audioInfo = await yt.videos.get(videoId);
-        await initilizeAudioHandler();
+        await initilizeAudioHandler(playVideoAsAudio.myAudioHandler);
         audioHandler.setUrl(url);
         List<Map<String, String>> allMusic = [{
           'id': audioInfo.id.toString(),

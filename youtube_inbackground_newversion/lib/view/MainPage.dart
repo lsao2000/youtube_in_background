@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-//import 'package:provider/provider.dart';
-//import 'package:youtube_inbackground_newversion/controller/provider/playlist_provider.dart';
 import 'package:youtube_inbackground_newversion/utils/colors.dart';
 import 'package:youtube_inbackground_newversion/view/FavouritePage.dart';
 import 'package:youtube_inbackground_newversion/view/HomePage.dart';
-import 'package:youtube_inbackground_newversion/view/LivesPage.dart';
 import 'package:youtube_inbackground_newversion/view/SearchPage.dart';
 
 class MainPage extends StatefulWidget {
@@ -25,7 +22,6 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
-    //double height = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: appBarColor,
@@ -51,7 +47,7 @@ class _MainPageState extends State<MainPage> {
       body: lstNavigationPages[pageIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-         BottomNavigationBarItem(icon: Icon(Icons.home), label: "home"),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite), label: "Favourite"),
           //BottomNavigationBarItem(

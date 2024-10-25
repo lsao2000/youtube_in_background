@@ -34,7 +34,7 @@ class SearchHistoryController {
         await db.execute(favoriteTable);
       }, version: 2);
     } catch (e) {
-      print("something went wrong in creating database ${e.toString()}");
+      log("create Database Error ${e.toString()}");
     }
   }
 
@@ -71,7 +71,7 @@ class SearchHistoryController {
       database.delete(searchTableName, where: "search_id = ?", whereArgs: [id]);
       database.close();
     } catch (e) {
-      print("Something went wrong ${e.toString()}");
+      log("something went wrong ${e.toString()}");
     }
   }
 
@@ -81,7 +81,7 @@ class SearchHistoryController {
       database.delete(favoriteTableName,
           where: "videoId = ?", whereArgs: [videoId]);
     } on DatabaseException catch (e) {
-        log(e.toString());
+      log(e.toString());
     }
   }
 
@@ -96,7 +96,7 @@ class SearchHistoryController {
           .toList();
       return allSearch;
     } catch (e) {
-      print("error in getting data of search ${e.toString()}");
+      log("get All Search Error ${e.toString()}");
       return [];
     }
   }
@@ -106,7 +106,6 @@ class SearchHistoryController {
       await createDatabase();
       final List<Map<String, dynamic>> data =
           await database.query(favoriteTableName);
-      print("length 1 : ${data.length}");
       final List<FavoriteVideoHistory> allData = data
           .map((el) => FavoriteVideoHistory.fromJson({
                 "videoId": el["videoId"],
@@ -119,10 +118,9 @@ class SearchHistoryController {
                 "realDuration": el["realDuration"],
               }))
           .toList();
-      print("length : ${allData.length}");
       return allData;
     } catch (e) {
-      print("error in getting data of favorite ${e.toString()}");
+      log("get All Favorite Error ${e.toString()}");
       return [];
     }
   }

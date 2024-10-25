@@ -4,22 +4,13 @@ import 'package:youtube_inbackground_newversion/controller/provider/play_favorit
 import 'package:youtube_inbackground_newversion/controller/provider/play_video_as_audio.dart';
 import 'package:youtube_inbackground_newversion/controller/provider/playlist_provider.dart';
 import 'package:youtube_inbackground_newversion/view/MainPage.dart';
-//import 'package:youtube_inbackground_newversion/view/test.dart';
+
 void main() {
-  runApp(
-      MyApp()
-  );
-      //const MyApp()
-      //ChangeNotifierProvider(
-    //create: (_) => PlayVideoAsAudio(),
-    //child: const MyApp(),
-  //));
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MultiProvider(

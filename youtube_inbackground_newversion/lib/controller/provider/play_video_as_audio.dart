@@ -155,10 +155,9 @@ class PlayVideoAsAudio extends ChangeNotifier {
   Future<void> playFavoriteAudio(FavoriteVideoHistory favoriteVideoHistory) async{
     try {
       String videoId = favoriteVideoHistory.videoId;
-      if (favoriteVideoHistory.isPlaying) {
-        print("resume");
-        myAudioHandler.play();
-      } else {
+      //if (favoriteVideoHistory.isPlaying) {
+      //  myAudioHandler.play();
+      //} else {
         print("play");
         String url = "";
         if (favoriteVideoHistory.isLive) {
@@ -170,7 +169,6 @@ class PlayVideoAsAudio extends ChangeNotifier {
           url = audioStreamInfo.url.toString();
         }
         var audioInfo = await yt.videos.get(videoId);
-        //await initilizeAudioHandler();
         myAudioHandler.setUrl(url);
         List<Map<String, String>> allMusic = [{
           'id': audioInfo.id.toString(),
@@ -186,10 +184,9 @@ class PlayVideoAsAudio extends ChangeNotifier {
             artUri: Uri.parse(music['url'] ?? ''),
             displaySubtitle: audioInfo.description)).toList();
         myAudioHandler.addQueueItems(mediaItem);
-        //myAudioHandler.addQueueItem(mediaItem);
         myAudioHandler.play();
         notifyListeners();
-      }
+      //}
     } catch (e) {
       print("error in playing ${e.toString()}");
     }

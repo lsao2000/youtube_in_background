@@ -1,6 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:youtube_inbackground_newversion/controller/provider/playlist_provider.dart';
 import 'package:youtube_inbackground_newversion/utils/colors.dart';
 
@@ -42,11 +43,10 @@ class LivesPageState extends State<LivesPage> {
                       onTap: () async {
                         playlistProvider.updateShowFloating();
                         try {
-                            var ls = await playlistProvider.searchYoutube();
-                            print(ls.toList());
-                          //setState(() async {});
+                          var ls = await playlistProvider.searchYoutube();
+                          log(ls.toList().toString());
                         } catch (e) {
-                            print("error ${e.toString()}");
+                          log("error ${e.toString()}");
                         }
                       },
                       child: playlistImage(),
@@ -72,10 +72,8 @@ class LivesPageState extends State<LivesPage> {
                         playlistBarHeight -= details.delta.dy;
                         playlistBarBottomPosition += details.delta.dy;
                         // Clamp the height within min and max bounds
-                        if (playlistBarHeight < _minHeight)
-                          playlistBarHeight = _minHeight;
-                        if (playlistBarHeight > _maxHeight)
-                          playlistBarHeight = _maxHeight;
+                        if (playlistBarHeight < _minHeight) playlistBarHeight = _minHeight;
+                        if (playlistBarHeight > _maxHeight) playlistBarHeight = _maxHeight;
                       });
                     },
                     child: AnimatedContainer(
@@ -179,7 +177,6 @@ class LivesPageState extends State<LivesPage> {
                                                       color: brandColor),
                                                 ),
                                               )
-                                              //https://www.youtube.com/watch?v=RksDIZmNiXY&t=62s&ab_channel=jsmdamanik
                                             ],
                                           ),
                                         )
@@ -279,20 +276,6 @@ class LivesPageState extends State<LivesPage> {
                   fontWeight: FontWeight.w400),
             ),
           ),
-          //Container(
-          //  alignment: Alignment.topLeft,
-          //  width: width * 0.4,
-          //  child: InkWell(
-          //    onTap: () {},
-          //    child: Text(
-          //      "show full playlist.",
-          //      style: TextStyle(
-          //          color: placeHolderColor,
-          //          overflow: TextOverflow.fade,
-          //          fontWeight: FontWeight.w800),
-          //    ),
-          //  ),
-          //),
         ],
       ),
     );

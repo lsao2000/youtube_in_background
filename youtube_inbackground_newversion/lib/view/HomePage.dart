@@ -1,6 +1,4 @@
 import 'dart:developer';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
@@ -20,14 +18,14 @@ class HomePageState extends State<HomePage> {
   VideoContoller? currentVideoController;
   final ScrollController _scrollController = ScrollController();
   late SearchHistoryController searchHistoryController;
+  late PlayVideoAsAudio playVideoAsAudio;
   @override
   void initState() {
     super.initState();
     try {
       searchHistoryController = SearchHistoryController();
     } catch (e) {
-        log(e.toString());
-        //print(e.toString());
+      log(e.toString());
     }
   }
 
@@ -35,7 +33,7 @@ class HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     double width = MediaQuery.sizeOf(context).width;
     double height = MediaQuery.sizeOf(context).height;
-    PlayVideoAsAudio playVideoAsAudio = Provider.of<PlayVideoAsAudio>(context);
+    playVideoAsAudio = Provider.of<PlayVideoAsAudio>(context);
     if (int.parse(playVideoAsAudio.runtimeTime.toString()) == 0) {
       return Center(
         child: Text(
@@ -75,9 +73,9 @@ class HomePageState extends State<HomePage> {
                 playVideoAsAudio.myAudioHandler.getPlayer.playerStateStream
                     .listen((state) {
                   if (state.processingState == ProcessingState.completed) {
-                    setState(() {
-                      videoContoller.updateProgressValue = 0;
-                    });
+                    //setState(() {
+                    videoContoller.updateProgressValue = 0;
+                    //});
                     playVideoAsAudio.myAudioHandler.getPlayer
                         .seek(Duration.zero);
                     playVideoAsAudio.myAudioHandler.getPlayer.pause();
@@ -181,14 +179,14 @@ class HomePageState extends State<HomePage> {
                 if (currentVideoController
                         ?.getCurrentDurationPositionInSecond ==
                     0) {
-                  print("listen");
+                  //print("listen");
                   playVideoAsAudio.myAudioHandler.getPlayer.playingStream
                       .listen((state) {
                     currentVideoController!.setIsPlaying = state;
                   });
                   currentVideoController?.updateCurrentDurationPosition = 1;
                 } else {
-                  print("already listning");
+                  log("already listning");
                 }
               },
               child: videoContoller.getIsPlaying
@@ -358,10 +356,16 @@ class HomePageState extends State<HomePage> {
     );
   }
 
+  @override
+  void dispose() {
+    playVideoAsAudio.myAudioHandler.stop();
+    super.dispose();
+  }
+
   void addMore(PlayVideoAsAudio playVideoAsAudio) {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      print("you reach the end of the scroll");
+      log("you reach the end of the scroll");
       playVideoAsAudio.addMoreVideo();
     }
   }

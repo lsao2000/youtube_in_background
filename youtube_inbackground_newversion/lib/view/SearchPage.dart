@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_inbackground_newversion/controller/localDatabase/search_history_controller.dart';
@@ -22,7 +23,7 @@ class SearchPageState extends State<SearchPage> {
       searchHistoryController = SearchHistoryController();
       refreshAllSearch();
     } catch (e) {
-      print(e.toString());
+      log(e.toString());
     }
   }
 
@@ -121,7 +122,7 @@ class SearchPageState extends State<SearchPage> {
                       );
                     },
                   );
-                  print("you want to delete it");
+                  log("you want to delete it");
                 },
               );
             },

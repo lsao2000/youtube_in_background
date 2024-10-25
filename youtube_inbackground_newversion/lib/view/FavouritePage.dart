@@ -1,7 +1,8 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_inbackground_newversion/controller/localDatabase/search_history_controller.dart';
-import 'package:youtube_inbackground_newversion/controller/provider/play_favorite_audio.dart';
 import 'package:youtube_inbackground_newversion/controller/provider/play_video_as_audio.dart';
 import 'package:youtube_inbackground_newversion/model/favorite_video_history.dart';
 import 'package:youtube_inbackground_newversion/utils/colors.dart';
@@ -15,6 +16,7 @@ class FavouritePage extends StatefulWidget {
 class FavouritePageState extends State<FavouritePage> {
   FavoriteVideoHistory? currentFavoriteVideoHistory;
   late SearchHistoryController searchHistoryController;
+  late PlayVideoAsAudio playVideoAsAudio;
   List<FavoriteVideoHistory> allFavoriteHistory = [];
   @override
   void initState() {
@@ -27,24 +29,34 @@ class FavouritePageState extends State<FavouritePage> {
   Widget build(BuildContext context) {
     double width = MediaQuery.sizeOf(context).width;
     double height = MediaQuery.sizeOf(context).height;
-    //PlayFavoriteAudio playFavoriteAudio = Provider.of<PlayFavoriteAudio>(context);
-    PlayVideoAsAudio playVideoAsAudio = Provider.of<PlayVideoAsAudio>(context);
+    playVideoAsAudio = Provider.of<PlayVideoAsAudio>(context);
     return ListView.builder(
-        itemCount: allFavoriteHistory.length,
-        itemBuilder: (ctx, index) {
-          FavoriteVideoHistory favoriteHistory = allFavoriteHistory[index];
-          return Container(
-              padding: EdgeInsets.symmetric(
-                  vertical: height * 0.01, horizontal: width * 0.02),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  vidoeImageInfo(
-                      width, height, favoriteHistory, playVideoAsAudio),
-                  videoInfo(width, height, favoriteHistory)
-                ],
-              ));
+      itemCount: allFavoriteHistory.length,
+      itemBuilder: (ctx, index) {
+        FavoriteVideoHistory favoriteHistory = allFavoriteHistory[index];
+
+        playVideoAsAudio.myAudioHandler.getPlayer.playerStateStream
+            .listen((state) {
+          if (state.processingState == ProcessingState.completed) {
+            favoriteHistory.updateProgressValue = 0;
+            playVideoAsAudio.myAudioHandler.getPlayer.seek(Duration.zero);
+            playVideoAsAudio.myAudioHandler.getPlayer.pause();
+            favoriteHistory.isPlaying = false;
+          }
         });
+        return Container(
+          padding: EdgeInsets.symmetric(
+              vertical: height * 0.01, horizontal: width * 0.02),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              vidoeImageInfo(width, height, favoriteHistory, playVideoAsAudio),
+              videoInfo(width, height, favoriteHistory)
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget videoInfo(
@@ -138,12 +150,13 @@ class FavouritePageState extends State<FavouritePage> {
                 shape: const CircleBorder(),
               ),
               onPressed: () {
-                playVideoAsAudio.playFavoriteAudio(favoriteHistory);
                 // posibilities of pause and play button in videoContoller.
                 // You play audio for the first time.
                 if (currentFavoriteVideoHistory == null) {
                   setState(() {
                     currentFavoriteVideoHistory = favoriteHistory;
+                    playVideoAsAudio
+                        .playFavoriteAudio(currentFavoriteVideoHistory!);
                     currentFavoriteVideoHistory!.isPlaying =
                         !currentFavoriteVideoHistory!.isPlaying;
                   });
@@ -151,30 +164,39 @@ class FavouritePageState extends State<FavouritePage> {
                 //// You play another audio after first time.
                 else if (currentFavoriteVideoHistory != favoriteHistory) {
                   setState(() {
+                    playVideoAsAudio.myAudioHandler.stop();
                     currentFavoriteVideoHistory!.isPlaying = false;
-                    favoriteHistory.isPlaying = !favoriteHistory.isPlaying;
                     currentFavoriteVideoHistory = favoriteHistory;
+                    playVideoAsAudio
+                        .playFavoriteAudio(currentFavoriteVideoHistory!);
+                    currentFavoriteVideoHistory!.isPlaying =
+                        !currentFavoriteVideoHistory!.isPlaying;
                   });
                 }
                 // You play and pause the same audio.
                 else {
                   setState(() {
+                    if (favoriteHistory.isPlaying) {
+                      playVideoAsAudio.myAudioHandler.pause();
+                    } else {
+                      playVideoAsAudio.myAudioHandler.play();
+                    }
                     currentFavoriteVideoHistory!.isPlaying =
                         !currentFavoriteVideoHistory!.isPlaying;
                   });
                 }
-                playVideoAsAudio.playFavoriteAudio(currentFavoriteVideoHistory!);
-                if (currentFavoriteVideoHistory?.getCurrentDurationPositionInSecond == 0) {
-                  //print("listen");
+                if (currentFavoriteVideoHistory
+                        ?.getCurrentDurationPositionInSecond ==
+                    0) {
                   playVideoAsAudio.myAudioHandler.getPlayer.playingStream
                       .listen((state) {
                     currentFavoriteVideoHistory!.isPlaying = state;
                   });
-                  currentFavoriteVideoHistory?.updateCurrentDurationPosition = 1;
+                  currentFavoriteVideoHistory?.updateCurrentDurationPosition =
+                      1;
                 } else {
-                  print("already listning");
+                  log("already listning");
                 }
-
               },
               child: favoriteHistory.isPlaying
                   ? Icon(
@@ -187,13 +209,14 @@ class FavouritePageState extends State<FavouritePage> {
                     ),
             ),
           ),
-          //Builder(
-          //  builder: (ctx) {
-          //    return favoriteHistory.isLive ? const Text("") :
-          //            const Text("not live");
-          //            //audioSliderBar(height, width, playVideoAsAudio, favoriteHistory);
-          //  },
-          //),
+          Builder(
+            builder: (ctx) {
+              return favoriteHistory.isLive
+                  ? const Text("")
+                  : audioSliderBar(
+                      height, width, playVideoAsAudio, favoriteHistory);
+            },
+          ),
           Positioned(
             top: height * 0.01,
             right: width * 0.02,
@@ -302,5 +325,10 @@ class FavouritePageState extends State<FavouritePage> {
     setState(() {
       allFavoriteHistory = data;
     });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
