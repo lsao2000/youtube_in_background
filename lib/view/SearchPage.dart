@@ -107,7 +107,7 @@ class SearchPageState extends State<SearchPage> {
                           TextButton(
                             onPressed: () {
                               searchHistoryController
-                                  .deleteItem(allSearch[index].search_id!);
+                                  .deleteItem(allSearch[index].searchId!);
                               refreshAllSearch();
                               Navigator.of(context).pop();
                             },

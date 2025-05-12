@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -50,7 +51,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
         notifyListeners();
       });
     } catch (e) {
-      print("error in initiliaze audio service${e.toString()}");
+      log("Error in initializing audio service: ${e.toString()}");
     }
   }
 
@@ -72,7 +73,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print("error : ${e.toString()}");
+      log("Error adding more videos: ${e.toString()}");
     }
   }
 
@@ -148,7 +149,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
       myAudioHandler.pause();
       return false;
     } catch (e) {
-      print("some error in initialize audio service ${e.toString()}");
+      log("Error in initializing audio service during playback: ${e.toString()}");
       return false;
     }
   }
@@ -158,7 +159,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
       //if (favoriteVideoHistory.isPlaying) {
       //  myAudioHandler.play();
       //} else {
-        print("play");
+        log("Playing audio");
         String url = "";
         if (favoriteVideoHistory.isLive) {
           var manifest = yt.videos.streams.getHttpLiveStreamUrl(VideoId(videoId));
@@ -188,7 +189,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
         notifyListeners();
       //}
     } catch (e) {
-      print("error in playing ${e.toString()}");
+      log("Error playing favorite audio: ${e.toString()}");
     }
   }
 }

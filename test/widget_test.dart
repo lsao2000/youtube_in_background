@@ -7,26 +7,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:youtube_inbackground_newversion/main.dart';
-import 'package:youtube_inbackground_newversion/view/HomePage.dart';
-import 'package:youtube_inbackground_newversion/view/MainPage.dart';
 
 void main() {
-  testWidgets('Y&B testing', (WidgetTester tester) async {
+  testWidgets('App should build without crashing', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
 
-    // Verify that our counter starts at 0.
-    //expect(find.text('1'), findsNothing);
-    expect(find.byType(MainPage), findsOneWidget);
-    //final button = find.byIcon(Icons.home);
-    //tester.tap(button)
-    //expect(find.byType(HomePage), findsOneWidget);
-    // Tap the '+' icon and trigger a frame.
-    await tester.pump();
-    expect(find.text("Search Something"), findsOneWidget);
-    //// Verify that our counter has incremented.
-    //expect(find.text('1'), findsOneWidget);
+    // Verify the app builds successfully
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

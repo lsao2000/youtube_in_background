@@ -1,5 +1,5 @@
 import 'dart:developer';
-
+import 'package:youtube_inbackground_newversion/utils/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_inbackground_newversion/controller/provider/playlist_provider.dart';
@@ -64,9 +64,6 @@ class LivesPageState extends State<LivesPage> {
                   left: 0,
                   right: 0,
                   child: GestureDetector(
-                    //onLongPressStart: (_) {
-                    //  // Optionally, you can add some feedback when long press starts
-                    //},
                     onVerticalDragUpdate: (details) {
                       setState(() {
                         playlistBarHeight -= details.delta.dy;
@@ -77,7 +74,7 @@ class LivesPageState extends State<LivesPage> {
                       });
                     },
                     child: AnimatedContainer(
-                      duration: Duration(milliseconds: 100),
+                      duration: const Duration(milliseconds: 100),
                       height: playlistBarHeight,
                       width: width, // Full width like the YouTube bottom bar
                       decoration: BoxDecoration(
@@ -94,8 +91,6 @@ class LivesPageState extends State<LivesPage> {
                                 ClipRect(
                                   child: Image.network(
                                     "https://img.youtube.com/vi/QWZ_LjzT39k/default.jpg",
-                                    //width: width * 0.5,
-                                    //scale: .1,
                                   ),
                                 ),
                                 SizedBox(
@@ -118,7 +113,7 @@ class LivesPageState extends State<LivesPage> {
                                     ),
                                     Text(
                                       "J cole",
-                                      style: TextStyle(
+                                      style:  TextStyle(
                                           color: brandColor,
                                           fontWeight: FontWeight.bold),
                                     )
@@ -152,7 +147,6 @@ class LivesPageState extends State<LivesPage> {
                                           child: Image.network(
                                             "https://img.youtube.com/vi/RksDIZmNiXY/default.jpg",
                                             width: width * 0.15,
-                                            //scale: 1,
                                           ),
                                         ),
                                         Container(
@@ -166,14 +160,14 @@ class LivesPageState extends State<LivesPage> {
                                             children: [
                                               Text(
                                                 "Name of the song or the video $index",
-                                                style: TextStyle(
+                                                style:  TextStyle(
                                                     color: brandColor),
                                               ),
                                               Container(
                                                 color: Colors.black,
                                                 child: Text(
                                                   "2:28",
-                                                  style: TextStyle(
+                                                  style:  TextStyle(
                                                       color: brandColor),
                                                 ),
                                               )
@@ -190,7 +184,7 @@ class LivesPageState extends State<LivesPage> {
                     ),
                   ),
                 )
-              : Text("");
+              : const Text("");
         }),
       ],
     );
@@ -207,7 +201,7 @@ class LivesPageState extends State<LivesPage> {
           Container(
             alignment: Alignment.center,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius:  BorderRadius.circular(8),
               child: Image.network(
                 "https://img.youtube.com/vi/QWZ_LjzT39k/default.jpg",
                 width: width * 0.45,
@@ -223,7 +217,7 @@ class LivesPageState extends State<LivesPage> {
                   vertical: height * 0.005, horizontal: width * 0.01),
               decoration: BoxDecoration(
                   color: Colors.black54,
-                  borderRadius: BorderRadius.circular(4)),
+                  borderRadius:  BorderRadius.circular(4)),
               child: Row(children: [
                 Icon(
                   Icons.playlist_play,
@@ -232,7 +226,7 @@ class LivesPageState extends State<LivesPage> {
                 Text(
                   "22",
                   style:
-                      TextStyle(color: brandColor, fontWeight: FontWeight.bold),
+                       TextStyle(color: brandColor, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(
                   width: width * 0.01,
@@ -258,7 +252,7 @@ class LivesPageState extends State<LivesPage> {
             child: Text(
               "let assume that this is a big title that we will wrap it and see what we can do",
               maxLines: 2,
-              style: TextStyle(
+              style: const TextStyle(
                   overflow: TextOverflow.ellipsis,
                   fontWeight: FontWeight.bold,
                   color: Colors.black),
