@@ -6,7 +6,7 @@ import 'package:youtube_inbackground_newversion/controller/provider/playlist_pro
 import 'package:youtube_inbackground_newversion/view/MainPage.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -31,3 +31,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
+
+

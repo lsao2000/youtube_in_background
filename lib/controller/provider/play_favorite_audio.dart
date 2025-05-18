@@ -29,8 +29,7 @@ class PlayFavoriteAudio extends ChangeNotifier {
       });
       notifyListeners();
     } catch (e) {
-      print("oh oh we got errors in audio ${e.toString()}");
-      log(e.toString());
+      log("Error initializing audio: ${e.toString()}");
     }
   }
 
@@ -39,10 +38,10 @@ class PlayFavoriteAudio extends ChangeNotifier {
     try {
       String videoId = favoriteVideoHistory.videoId;
       if (favoriteVideoHistory.isPlaying) {
-        print("resume");
+        log("Resuming audio");
         audioHandler.play();
       } else {
-        print("play");
+        log("Playing new audio");
         String url = "";
         if (favoriteVideoHistory.isLive) {
           var manifest = yt.videos.streams.getHttpLiveStreamUrl(VideoId(videoId));
@@ -74,7 +73,7 @@ class PlayFavoriteAudio extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print("error in playing ${e.toString()}");
+      log("Error playing audio: ${e.toString()}");
     }
   }
 }

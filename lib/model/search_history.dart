@@ -1,33 +1,36 @@
-import 'dart:developer';
-
 class SearchHistory {
-    String search;
-    int?  search_id;
-    //DateTime storedAt;
-    //int countSearch;
-    //SearchHistory({required this.search, required this.storedAt, required this.countSearch});
-    SearchHistory({required this.search});
-    SearchHistory.secondConstructor({required this.search, required this.search_id});
-    Map<String, dynamic> toJson() {
-        return {
-            "search": search,
-            //"storedAt": storedAt,
-            //"countSearch": countSearch
-        };
-    }
+  String search;
+  int? searchId;
 
-    static SearchHistory fromJson({required Map<String, dynamic> searchMap}) {
-        SearchHistory searchHistory =
-                SearchHistory.secondConstructor(search: searchMap['search'], search_id: searchMap['search_id']);
-                //SearchHistory(search: searchMap['search'] as String);
-        return searchHistory;
-    }
+  SearchHistory({required this.search});
+  
+  SearchHistory.secondConstructor({
+    required this.search, 
+    required int? searchId,
+  }) : this.searchId = searchId;
 
-    @override
-    bool operator ==(Object other) {
-        return this == other;
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      "search": search,
+      "search_id": searchId,
+    };
+  }
 
-    @override
-    int get hashCode => search.hashCode;
+  static SearchHistory fromJson({required Map<String, dynamic> searchMap}) {
+    return SearchHistory.secondConstructor(
+      search: searchMap['search'], 
+      searchId: searchMap['search_id'],
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is SearchHistory && 
+           other.search == search && 
+           other.searchId == searchId;
+  }
+
+  @override
+  int get hashCode => search.hashCode ^ (searchId?.hashCode ?? 0);
 }

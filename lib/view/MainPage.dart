@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_inbackground_newversion/utils/colors.dart';
-import 'package:youtube_inbackground_newversion/view/FavouritePage.dart';
-import 'package:youtube_inbackground_newversion/view/HomePage.dart';
-import 'package:youtube_inbackground_newversion/view/SearchPage.dart';
+import 'package:youtube_inbackground_newversion/view/favorite/FavouritePage.dart';
+import 'package:youtube_inbackground_newversion/view/home/home_page.dart';
+import 'package:youtube_inbackground_newversion/view/search/SearchPage.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key, required this.title});
@@ -15,6 +15,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   int pageIndex = 0;
   List<Widget> lstNavigationPages = [
+    // const HomePage(),
     const HomePage(),
     const FavouritePage(),
     //const LivesPage()
