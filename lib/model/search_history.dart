@@ -3,9 +3,9 @@ class SearchHistory {
   int? searchId;
 
   SearchHistory({required this.search});
-  
+
   SearchHistory.secondConstructor({
-    required this.search, 
+    required this.search,
     required int? searchId,
   }) : this.searchId = searchId;
 
@@ -18,7 +18,7 @@ class SearchHistory {
 
   static SearchHistory fromJson({required Map<String, dynamic> searchMap}) {
     return SearchHistory.secondConstructor(
-      search: searchMap['search'], 
+      search: searchMap['search'],
       searchId: searchMap['search_id'],
     );
   }
@@ -26,8 +26,8 @@ class SearchHistory {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is SearchHistory && 
-           other.search == search && 
+    return other is SearchHistory &&
+           other.search == search &&
            other.searchId == searchId;
   }
 

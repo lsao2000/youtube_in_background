@@ -5,7 +5,7 @@ import 'package:youtube_inbackground_newversion/utils/audio_services.dart';
 class HomeController extends ChangeNotifier {
   final YoutubeExplode youtubeExplode = YoutubeExplode();
   late VideoSearchList lstVideoSearch;
-  late AudioServices audioServices;
+  // late AudioServices audioServices;
   HomeController() {
   }
   Future<void> getAudioHandler()async {
