@@ -4,7 +4,7 @@ import 'package:youtube_inbackground_newversion/src/features/search/data/reposit
 import 'package:youtube_inbackground_newversion/src/features/search/domain/usercases/get_search_use_case.dart';
 import 'package:youtube_inbackground_newversion/src/features/search/presentation/getx/search_controller.dart';
 
-void init() {
+void initSearchDependy() {
   final datasource = LocalDb();
   final respository = SearchRepositoryImpl(datasource);
   final getSearchUserCase = GetSearchUseCase(searchRepository: respository);

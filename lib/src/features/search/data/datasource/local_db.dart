@@ -70,7 +70,7 @@ class LocalDb {
       var addS = await db.insert(searchTableName, searchHistory.toJson());
 
       debugPrint("id: $addS");
-      db.close();
+      debugPrint("succeess");
     } catch (e) {
       debugPrint("failed to add history:${e.toString()}");
     }

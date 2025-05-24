@@ -10,6 +10,6 @@ class RoutePages {
     GetPage(name: '/', page: () => MainPage(), binding: MainBinding()),
     GetPage(name: '/home', page: () => HomePage()),
     GetPage(name: '/favorite', page: () => FavoritePage()),
-    // GetPage(name: "/search", page: () => const ())
+    // GetPage(name: "/search", page: () => const SearchPage())
   ];
 }

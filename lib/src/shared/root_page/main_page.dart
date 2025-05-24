@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:youtube_inbackground_newversion/src/features/search/presentation/view/search_page.dart';
-import 'package:youtube_inbackground_newversion/src/features/search/search_dependency_injections.dart';
 import 'package:youtube_inbackground_newversion/src/shared/root_page/main_controller.dart';
 import 'package:youtube_inbackground_newversion/src/features/favorite/presentation/pages/favorite_page.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/presentation/pages/home_page.dart';
@@ -19,13 +18,14 @@ class MainPage extends GetView<MainController> {
         actions: [
           IconButton(
             onPressed: () async {
-              init();
+              // init();
               await showSearch(context: context, delegate: SearchPage());
+              // Get.toNamed("");
             },
             icon: Icon(
               Icons.search,
               color: Colors.white,
-              size: width * 0.03,
+              size: Get.height * 0.04,
             ),
           ),
         ],
