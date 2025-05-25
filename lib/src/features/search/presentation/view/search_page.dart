@@ -39,8 +39,10 @@ class SearchPage extends SearchDelegate {
   @override
   Widget buildResults(BuildContext context) {
     if (query.isNotEmpty) {
-      Future.any([searchBarController.addToHistory(query)]).whenComplete(() {
-        Get.back();
+      Future.any([searchBarController.addToHistory(query)])
+          .whenComplete(() async {
+        // Get.back();
+        await searchBarController.searchForVideo(searchQuery: query);
       });
     }
     return const SizedBox();

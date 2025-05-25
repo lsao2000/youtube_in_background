@@ -18,6 +18,7 @@ class SearchHistory {
   factory SearchHistory.fromJson(Map<String, dynamic> json) =>
       _$SearchHistoryFromJson(json);
 
+
   // Required for JSON deserialization
   Map<String, dynamic> toJson() => _$SearchHistoryToJson(this);
 }

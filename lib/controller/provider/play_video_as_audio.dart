@@ -22,6 +22,7 @@ class PlayVideoAsAudio extends ChangeNotifier {
     notifyListeners();
     lstSearch = await yt.search.search(searchType);
     List<Video> lstVideosInfo = lstSearch!.toList(growable: true);
+    // lstVideosInfo.firs
     allLstVideos = lstVideosInfo
         .map((el) => VideoContoller(
               videoId: el.id.toString(),
