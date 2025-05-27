@@ -5,20 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
 
 class HomeLocalDb {
   Database? _database;
   static const favoriteTableName = "favorite_history";
   static const favoriteTable =
       """ CREATE TABLE IF NOT EXISTS $favoriteTableName (
-                  videoId TEXT PRIMARY KEY,
-                  titleVideo TEXT,
-                  videoWatchers TEXT,
-                  imgUrl TEXT,
-                  isLive INTEGER,
-                  videoDuration TEXT,
-                  videoChannel TEXT,
-                  realDuration INTEGER
+                favorite_id INTEGER PRIMARY KEY,
+                  video_id TEXT
                   )""";
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -55,6 +50,7 @@ class HomeLocalDb {
       debugPrint(e.toString());
     }
   }
+
   // Future<List<FavoriteVideoHistory>> getAllFavorite() async {
   //   try {
   //     await createDatabase();
@@ -78,24 +74,16 @@ class HomeLocalDb {
   //     return [];
   //   }
   // }
-  // Future<void> deleteFavoriteHistory({required String videoId}) async {
-  //   try {
-  //     await createDatabase();
-  //     database.delete(favoriteTableName,
-  //         where: "videoId = ?", whereArgs: [videoId]);
-  //   } on DatabaseException catch (e) {
-  //     log(e.toString());
-  //   }
-  // }
-  // Future<void> addToFavorite(FavoriteVideoHistory favoriteVideoHistory) async {
-  //   try {
-  //     //print("not added yet");
-  //     await createDatabase();
-  //     await database.insert(favoriteTableName, favoriteVideoHistory.toJson());
-  //     database.close();
-  //   } catch (e) {
-  //     log(e.toString());
-  //   }
-  // }
+  Future<void> deleteFavoriteHistory({required int? favoriteId}) async {
+    final db = await database;
+    db.delete(favoriteTableName,
+        where: "favorite_id = ?", whereArgs: [favoriteId]);
+  }
 
+  Future<void> addToFavorite({required String videoId}) async {
+    final db = await database;
+    FavoriteModel favoriteModel = FavoriteModel(id: null, videoId: videoId);
+    await db.insert(favoriteTableName, favoriteModel.toJson());
+    db.close();
+  }
 }

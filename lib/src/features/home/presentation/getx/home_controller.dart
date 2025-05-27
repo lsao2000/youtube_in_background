@@ -46,25 +46,25 @@ class HomeController extends GetxController {
 
   Future addAndRemoveFavorite({required String videoId}) async {
     final index = lstVideos.indexWhere((e) => e.videoId == videoId);
-    lstVideos.value;
-    lstVideos.value[index].isLoadingFavorite = true;
-    lstVideos.refresh();
-    Future.delayed(Duration(seconds: 1)).whenComplete(() {
-      lstVideos.value[index].isLoadingFavorite = false;
-      lstVideos.value[index].isFavorite = !lstVideos.value[index].isFavorite;
-      lstVideos.refresh();
-    });
-    // FavoriteVideoHistory favoriteVideoHistory = FavoriteVideoHistory(
-    //     titleVideo: videoContoller.getTitleVideo,
-    //     videoId: videoContoller.getVideoId,
-    //     videoWatchers: videoContoller.getVideoWatchers,
-    //     imgUrl:
-    //         "https://img.youtube.com/vi/${videoContoller.getVideoId}/default.jpg",
-    //     isLive: videoContoller.getIsLive,
-    //     videoDuration: videoContoller.getVideoDuration,
-    //     videoChannel: videoContoller.getVideoChannel,
-    //     realDuration: videoContoller.getRealDuration);
-    // searchHistoryController.addToFavorite(favoriteVideoHistory);
+    if (!lstVideos.value[index].isFavorite) {
+      var dataExecution = await homeUseCase.addToFavorite(videoId: videoId);
+      if (dataExecution) {
+        lstVideos.value;
+        lstVideos.value[index].isLoadingFavorite = true;
+        lstVideos.refresh();
+        Future.delayed(Duration(seconds: 1)).whenComplete(() {
+          lstVideos.value[index].isLoadingFavorite = false;
+          lstVideos.value[index].isFavorite =
+              !lstVideos.value[index].isFavorite;
+          lstVideos.refresh();
+        });
+      } else {
+        ScaffoldMessenger.of(Get.context!)
+            .showSnackBar(SnackBar(content: Text("fail to add to favorite")));
+      }
+    } else {
+      // homeUseCase.removeFromFavorite(favoriteId: favoriteId);
+    }
   }
 
   String customViewsText(int views) {
