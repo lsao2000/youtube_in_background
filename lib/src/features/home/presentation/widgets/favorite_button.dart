@@ -21,7 +21,6 @@ Widget favoriteButton(double height, double width, HomeModel homeModel) {
         }
         return InkWell(
           onTap: () async {
-              debugPrint("clicked");
             await controller.addAndRemoveFavorite(videoId: homeModel.videoId);
           },
           child: Builder(builder: (ctx) {

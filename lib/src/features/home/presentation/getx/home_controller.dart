@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/home_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/usecases/home_use_case.dart';
 
@@ -9,8 +10,25 @@ class HomeController extends GetxController {
   HomeController({required this.homeUseCase});
   final YoutubeExplode yt = YoutubeExplode();
   RxList<HomeModel> lstVideos = <HomeModel>[].obs;
+  RxList<FavoriteModel> lstFavorite = <FavoriteModel>[].obs;
   RxBool isLoading = false.obs;
   RxBool isFavoriteLoading = false.obs;
+
+  @override
+  void onInit() async {
+    super.onInit();
+    await getAllFavorite();
+  }
+
+  Future getAllFavorite() async {
+    lstFavorite.value = await homeUseCase.getAllFavorite();
+    lstFavorite.refresh();
+    debugPrint(lstFavorite.length.toString());
+    for (var i = 0; i < lstFavorite.length; i++) {
+      debugPrint(lstFavorite[i].videoId);
+    }
+  }
+
   Future searchYoutube({required String searchQuery}) async {
     try {
       isLoading.value = true;
@@ -21,18 +39,25 @@ class HomeController extends GetxController {
         debugPrint(lstSearch[i].url);
       }
       if (lstSearch.isNotEmpty) {
-        lstVideos.value = lstSearch.map((e) {
-          return HomeModel(
+        lstVideos.value = List.generate(
+          lstSearch.length,
+          (e) => HomeModel(
             isFavorite: false,
-            videoId: e.id.value,
-            viewCount: customViewsText(e.engagement.viewCount),
-            isLive: e.isLive,
-            channelName: e.author,
-            videoDuration: e.duration ?? Duration.zero,
-            durationAsString: customDurationText(e.duration ?? Duration.zero),
-            title: e.title,
-          );
-        }).toList();
+            videoId: lstSearch[e].id.value,
+            viewCount: customViewsText(lstSearch[e].engagement.viewCount),
+            isLive: lstSearch[e].isLive,
+            channelName: lstSearch[e].author,
+            videoDuration: lstSearch[e].duration ?? Duration.zero,
+            durationAsString:
+                customDurationText(lstSearch[e].duration ?? Duration.zero),
+            title: lstSearch[e].title,
+          ),
+        );
+        lstVideos.refresh();
+        for (var video in lstVideos) {
+          var isFavorite = lstFavorite.any((e) => e.videoId == video.videoId);
+          video.isFavorite = isFavorite;
+        }
         lstVideos.refresh();
       }
     } catch (e) {
@@ -40,7 +65,6 @@ class HomeController extends GetxController {
     } finally {
       isLoading.value = false;
       isLoading.refresh();
-      // update();
     }
   }
 
@@ -49,8 +73,8 @@ class HomeController extends GetxController {
     if (!lstVideos.value[index].isFavorite) {
       var dataExecution = await homeUseCase.addToFavorite(videoId: videoId);
       if (dataExecution) {
-        lstVideos.value;
         lstVideos.value[index].isLoadingFavorite = true;
+        await getAllFavorite();
         lstVideos.refresh();
         Future.delayed(Duration(seconds: 1)).whenComplete(() {
           lstVideos.value[index].isLoadingFavorite = false;
@@ -58,12 +82,21 @@ class HomeController extends GetxController {
               !lstVideos.value[index].isFavorite;
           lstVideos.refresh();
         });
-      } else {
-        ScaffoldMessenger.of(Get.context!)
-            .showSnackBar(SnackBar(content: Text("fail to add to favorite")));
       }
     } else {
-      // homeUseCase.removeFromFavorite(favoriteId: favoriteId);
+      var databasseExecution =
+          await homeUseCase.removeFromFavorite(videoId: videoId);
+      if (databasseExecution) {
+        await getAllFavorite();
+        lstVideos.value[index].isLoadingFavorite = true;
+        lstVideos.refresh();
+        Future.delayed(const Duration(seconds: 1)).whenComplete(() {
+          lstVideos.value[index].isLoadingFavorite = false;
+          lstVideos.value[index].isFavorite =
+              !lstVideos.value[index].isFavorite;
+          lstVideos.refresh();
+        });
+      }
     }
   }
 

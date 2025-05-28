@@ -30,19 +30,25 @@ class HomePage extends StatelessWidget {
           itemCount: controller.lstVideos.length,
           itemBuilder: (ctx, index) {
             HomeModel homeModel = controller.lstVideos[index];
-            return Container(
-              padding: EdgeInsets.symmetric(
-                  horizontal: Get.width * 0.02, vertical: Get.height * 0.01),
-              child: Row(
-                spacing: Get.width * 0.02,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  videoImage(Get.width, Get.height, homeModel),
-                  videoInfo(
-                      width: Get.width,
-                      height: Get.height,
-                      homeModel: homeModel)
-                ],
+            return InkWell(
+              onTap: () {
+                debugPrint("SS");
+                debugPrint(homeModel.videoId);
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: Get.width * 0.02, vertical: Get.height * 0.01),
+                child: Row(
+                  spacing: Get.width * 0.02,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    videoImage(Get.width, Get.height, homeModel),
+                    videoInfo(
+                        width: Get.width,
+                        height: Get.height,
+                        homeModel: homeModel)
+                  ],
+                ),
               ),
             );
           });

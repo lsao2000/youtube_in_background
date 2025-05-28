@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/data/data_source/localDb/home_local_db.dart';
+import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/repository/home_repository.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
@@ -16,10 +17,21 @@ class HomeRepositoryImpl implements HomeRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> removeFromFavorite(
-      {required int? favoriteId}) async {
+  Future<Map<String, dynamic>> getAllFavorite() async {
     try {
-      homeLocalDb.deleteFavoriteHistory(favoriteId: favoriteId);
+      // return
+      var data = await homeLocalDb.getAllFavorites();
+      return {"success": true, "msg": "success to retrieve data", "data": data};
+    } catch (e) {
+      return {"success": false, "msg": e.toString(), "data": []};
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> removeFromFavorite(
+      {required String? videoId}) async {
+    try {
+      homeLocalDb.deleteFavoriteHistory(videoId: videoId);
       return {"success": true, "msg": "success to delete favorite"};
     } on DatabaseException catch (e) {
       return {"success": true, "msg": e.toString()};
