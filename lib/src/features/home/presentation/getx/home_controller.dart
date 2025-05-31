@@ -4,6 +4,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/home_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/usecases/home_use_case.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class HomeController extends GetxController {
   final HomeUseCase homeUseCase;
@@ -13,31 +14,44 @@ class HomeController extends GetxController {
   RxList<FavoriteModel> lstFavorite = <FavoriteModel>[].obs;
   RxBool isLoading = false.obs;
   RxBool isFavoriteLoading = false.obs;
+  final Rx<HomeModel?> selectedVideo = Rx<HomeModel?>(null);
+  RxBool isVideoMinimized = false.obs;
+  RxDouble dragHeight = 0.0.obs;
+  Rx<YoutubePlayerController> youtubePlayerController = YoutubePlayerController(
+    initialVideoId: 'iLnmTe5Q2Qw',
+    flags: const YoutubePlayerFlags(
+      isLive: true,
+    ),
+  ).obs;
 
   @override
   void onInit() async {
     super.onInit();
     await getAllFavorite();
+    dragHeight = (Get.height*0.83).obs;
+  }
+
+  updateSelectedVideo({required HomeModel homeModel}) async {
+    // youtubePlayerController.value.dispose();
+    selectedVideo.value = homeModel;
+    selectedVideo.refresh();
+    youtubePlayerController.value = YoutubePlayerController(
+        initialVideoId: selectedVideo.value!.videoId,
+        flags: YoutubePlayerFlags(isLive: homeModel.isLive, autoPlay: true));
+    youtubePlayerController.refresh();
+    // youtubePlayerController.value.play();
   }
 
   Future getAllFavorite() async {
     lstFavorite.value = await homeUseCase.getAllFavorite();
     lstFavorite.refresh();
-    debugPrint(lstFavorite.length.toString());
-    for (var i = 0; i < lstFavorite.length; i++) {
-      debugPrint(lstFavorite[i].videoId);
-    }
   }
 
   Future searchYoutube({required String searchQuery}) async {
     try {
       isLoading.value = true;
-      // update();
       isLoading.refresh();
       VideoSearchList lstSearch = await yt.search.search(searchQuery);
-      for (var i = 0; i < lstSearch.length; i++) {
-        debugPrint(lstSearch[i].url);
-      }
       if (lstSearch.isNotEmpty) {
         lstVideos.value = List.generate(
           lstSearch.length,
@@ -110,7 +124,6 @@ class HomeController extends GetxController {
       var newViews = views / 1000000;
       return "${newViews.toStringAsFixed(1)} M";
     }
-
     return "${(views / 1000000000).toStringAsFixed(1)} Md";
   }
 

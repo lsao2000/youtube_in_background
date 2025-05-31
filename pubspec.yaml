@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   audio_service: ^0.18.13
   # youtube_explode_dart: ^2.2.2
+  youtube_player_flutter: ^9.1.1
   youtube_explode_dart: ^2.3.0+1
   provider: ^6.1.2
   sqflite: ^2.3.3+1
