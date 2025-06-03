@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:youtube_inbackground_newversion/src/core/styles/theme_colors.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/home_model.dart';
@@ -69,121 +68,193 @@ class HomePage extends StatelessWidget {
               right: 0,
               child: GestureDetector(
                 onVerticalDragEnd: (details) {
-                  final currentHeight = controller.dragHeight.value;
-                  final screenHeight = Get.height;
-
-                  if (currentHeight > screenHeight * 0.5) {
-                    // Snap to full height if more than halfway
-                    controller.dragHeight.value = screenHeight * 0.826;
-                    controller.isVideoMinimized.value = false;
-                  } else if (currentHeight <= screenHeight * 0.5) {
-                    // Snap to minimized height if less than halfway but above threshold
-                    controller.dragHeight.value = screenHeight * 0.1;
-                    controller.isVideoMinimized.value = true;
-                  } else {
-                    // Close completely if dragged below threshold
-                    // controller.selectedVideo.value = null;
-                  }
+                  controller.dragHeight.value =
+                      controller.isVideoMinimized.value
+                          ? controller.availableHeight.value * 0.14
+                          : controller.availableHeight.value;
                 },
                 onVerticalDragUpdate: (details) {
                   final newHeight =
                       controller.dragHeight.value - details.primaryDelta!;
-                  // final maxHeight = Get.height * 0.83;
-                  final maxHeight = Get.height * 0.83;
-
+                  final maxHeight = controller.availableHeight.value;
                   final minHeight = Get.height * 0.1;
-
                   if (newHeight >= minHeight && newHeight <= maxHeight) {
                     controller.dragHeight.value = newHeight;
-                    controller.isVideoMinimized.value = false;
+                    if (details.primaryDelta! > 0 &&
+                        newHeight < maxHeight * 0.9) {
+                      controller.isVideoMinimized.value = true;
+                    } else if (details.primaryDelta! < 0 &&
+                        newHeight > Get.height * 0.2) {
+                      controller.isVideoMinimized.value = false;
+                    }
                   }
                 },
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 500),
+                  decoration: BoxDecoration(color: white, boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      // withOpacity( 0.3), // Shadow color (black with opacity)
+                      spreadRadius: 2, // How far the shadow extends
+                      blurRadius: 5, // Softness of the shadow
+                      offset: const Offset(0, 4), // Shadow position (x, y)
+                    ),
+                  ]),
                   height: controller.dragHeight.value,
-                  color: Colors.red,
-                  child:
-                      // Column(
-                      //
-                      // )
-                      // controller.isVideoMinimized.value
-                      //     ? _buildMinimizedRow(controller)
-                      //     : _buildExpandedColumn(controller)
-                      Column(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Draggable handle
-                      Container(
-                        height: Get.height * 0.01,
-                        color: Colors.grey[300],
-                        child: Center(
-                          child: Container(
-                            width: 40,
-                            height: Get.height * 0.002,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[500],
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Video player section
                       Flexible(
-                          // flex: controller.isVideoMinimized.value ? 3 : 0,
-                          fit: FlexFit.tight,
-                          // height: controller.isVideoMinimized.value
-                          //     ? Get.height * 0.09
-                          //     : Get.width * 9 / 16, // 16:9 aspect ratio
-                          // width: Get.width * 0.4,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.max,
-                            children: [
-                              Flexible(
-                                  child: YoutubePlayer(
+                        fit: FlexFit.loose,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Flexible(
+                              child: YoutubePlayer(
+                                // width: Get.width,
+                                key: ValueKey(
+                                    controller.youtubePlayerController.value),
                                 controller:
                                     controller.youtubePlayerController.value,
-                              )),
-                              // if (controller.isVideoMinimized.value)
-                              //   // Padding(
-                              //   //   padding: const EdgeInsets.all(8.0),
-                              //   //   child:
-                              //   SizedBox(
-                              //     width: Get.width * 0.05,
-                              //   ),
-                              if (controller.isVideoMinimized.value)
-                                SizedBox(
-                                    width: Get.width * 0.5,
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: Get.width * 0.04,
-                                          vertical: Get.height * 0.01),
-                                      child: Text(
-                                        overflow: TextOverflow.ellipsis,
-                                        controller.selectedVideo.value?.title ??
-                                            '',
-                                        // style: TextStyle(fontSize: 16),
-                                        // ),
-                                      ),
-                                    ))
-                            ],
-                          )),
-                      // Additional content (only visible when expanded)
+                              ),
+                            ),
+                            if (controller.isVideoMinimized.value)
+                              SizedBox(
+                              // width: Get.width * 0.2,
+                              // width: Get.width * 0.52,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: Get.width * 0.04,
+                                      vertical: Get.height * 0.01),
+                                  child: Text(
+                                    overflow: TextOverflow.ellipsis,
+                                    controller.selectedVideo.value?.title ?? '',
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                       if (!controller.isVideoMinimized.value) ...[
                         Expanded(
                           child: SingleChildScrollView(
                             child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Your video info content here
-                                // Example:
                                 Padding(
-                                  padding: const EdgeInsets.all(8.0),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: Get.width * 0.04,
+                                      vertical: Get.height * 0.01),
                                   child: Text(
-                                    controller.selectedVideo.value?.title ?? '',
-                                    style: TextStyle(fontSize: 16),
+                                    controller.selectedVideo.value?.title ?? "",
+                                    maxLines: 2,
+                                    style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        overflow: TextOverflow.ellipsis),
                                   ),
                                 ),
-                                // Add more content as needed
+                                Row(
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    SizedBox(
+                                      width: Get.width * 0.03,
+                                    ),
+                                    SizedBox(
+                                      width: Get.width * .08,
+                                      height: Get.width * .08,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(
+                                            Get.width * .1),
+                                        child: Image.network(
+                                          controller.selectedVideo.value
+                                                  ?.channelImageUrl ??
+                                              "",
+                                          // "",
+                                          width: Get.width * 0.04,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  const Icon(Icons.error),
+                                          // height: Get.height * .035,
+                                          loadingBuilder: (context, child,
+                                              loadingProgress) {
+                                            if (loadingProgress == null) {
+                                              return child;
+                                            }
+                                            return SizedBox(
+                                                width: Get.width * 0.08,
+                                                height: Get.width * 0.08,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  value: loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!,
+                                                  color: deepOrange,
+                                                ));
+                                          },
+                                          fit: BoxFit.fill,
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: Get.width * 0.04,
+                                          vertical: Get.height * 0.01),
+                                      child: Text(
+                                        controller.selectedVideo.value
+                                                ?.channelName ??
+                                            "",
+                                        style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.black54,
+                                            overflow: TextOverflow.ellipsis),
+                                      ),
+                                    ),
+                                    const Expanded(child: Text("")),
+                                    IconButton(
+                                      onPressed: () {
+                                        debugPrint("share");
+                                      },
+                                      icon: Icon(
+                                        Icons.share,
+                                        color: deepOrange,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        debugPrint("download");
+                                      },
+                                      icon: Icon(
+                                        Icons.download,
+                                        color: deepOrange,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: Get.width * 0.02,
+                                    )
+                                  ],
+                                ),
+                                const Divider(
+                                  color: Colors.black26,
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: Get.width * 0.04,
+                                      vertical: Get.height * 0.01),
+                                  child: Text(
+                                    controller
+                                            .selectedVideo.value?.description ??
+                                        "",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black54,
+                                      // overflow: TextOverflow.ellipsis
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -198,143 +269,5 @@ class HomePage extends StatelessWidget {
         ],
       );
     });
-  }
-
-  Widget _buildExpandedColumn(HomeController controller) {
-    return Column(
-      children: [
-        // Draggable Handle
-        Container(
-          height: 24,
-          alignment: Alignment.center,
-          child: Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[600],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ),
-
-        // Video Player (Large)
-        AspectRatio(
-          aspectRatio: 16 / 9,
-          child: YoutubePlayer(
-            controller: controller.youtubePlayerController.value,
-          ),
-        ),
-
-        // Video Info
-        Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  controller.selectedVideo.value?.title ?? '',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Text(
-                      controller.selectedVideo.value?.channelName ?? '',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                    Spacer(),
-                    Text(
-                      controller.selectedVideo.value?.viewCount ?? '',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-                // Add more info/buttons as needed
-                _buildActionButtons(controller),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons(HomeController controller) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        IconButton(
-          icon: Icon(Icons.thumb_up, color: Colors.white),
-          onPressed: () {},
-        ),
-        IconButton(
-          icon: Icon(Icons.thumb_down, color: Colors.white),
-          onPressed: () {},
-        ),
-        IconButton(
-          icon: Icon(Icons.share, color: Colors.white),
-          onPressed: () {},
-        ),
-        Obx(() => IconButton(
-              icon: Icon(
-                controller.selectedVideo.value?.isFavorite == true
-                    ? Icons.favorite
-                    : Icons.favorite_border,
-                color: Colors.red,
-              ),
-              onPressed: () => controller.addAndRemoveFavorite(
-                videoId: controller.selectedVideo.value!.videoId,
-              ),
-            )),
-      ],
-    );
-  }
-
-  Widget _buildMinimizedRow(HomeController controller) {
-    return Row(
-      children: [
-        // Video Player (Small)
-        Container(
-          width: Get.width * 0.4,
-          height: double.infinity,
-          child: YoutubePlayer(
-            controller: controller.youtubePlayerController.value,
-            aspectRatio: 16 / 9,
-          ),
-        ),
-
-        // Video Info
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  controller.selectedVideo.value?.title ?? '',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 4),
-                Text(
-                  controller.selectedVideo.value?.channelName ?? '',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Close/Minimize Button
-        IconButton(
-          icon: Icon(Icons.close, color: Colors.white),
-          onPressed: () => controller.selectedVideo.value = null,
-        ),
-      ],
-    );
   }
 }

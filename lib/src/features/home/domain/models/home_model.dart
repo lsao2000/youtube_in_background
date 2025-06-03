@@ -11,12 +11,17 @@ class HomeModel {
   final String channelName;
   final bool isLive;
   final String durationAsString;
+  final String description;
+  String channelImageUrl;
   bool isFavorite = false;
   bool isLoadingFavorite = false;
+
   HomeModel(
       {required this.videoId,
+      required this.description,
       required this.viewCount,
       required this.isLive,
+      required this.channelImageUrl,
       required this.channelName,
       required this.videoDuration,
       required this.durationAsString,

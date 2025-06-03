@@ -7,6 +7,8 @@ part of 'home_model.dart';
 // **************************************************************************
 
 HomeModel _$HomeModelFromJson(Map<String, dynamic> json) => HomeModel(
+      channelImageUrl: json["channelImageUrl"],
+      description: json["description"],
       videoId: json['videoId'] as String,
       viewCount: json['viewCount'] as String,
       isLive: json['isLive'] as bool,

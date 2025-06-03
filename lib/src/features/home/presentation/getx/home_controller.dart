@@ -17,6 +17,13 @@ class HomeController extends GetxController {
   final Rx<HomeModel?> selectedVideo = Rx<HomeModel?>(null);
   RxBool isVideoMinimized = false.obs;
   RxDouble dragHeight = 0.0.obs;
+  RxDouble appBarHeight = 0.0.obs;
+  RxDouble totalHeight = 0.0.obs;
+  RxDouble bottomNavBarHeight = 0.0.obs;
+  RxDouble statusBarHeight = 0.0.obs;
+  RxDouble availableHeight = 0.0.obs;
+  RxList<String> youtubeChannelImage = <String>[].obs;
+
   Rx<YoutubePlayerController> youtubePlayerController = YoutubePlayerController(
     initialVideoId: 'iLnmTe5Q2Qw',
     flags: const YoutubePlayerFlags(
@@ -28,18 +35,39 @@ class HomeController extends GetxController {
   void onInit() async {
     super.onInit();
     await getAllFavorite();
-    dragHeight = (Get.height*0.83).obs;
+    RxDouble appBarHeight = AppBar().preferredSize.height.obs;
+    RxDouble totalHeight = Get.height.obs;
+    RxDouble bottomNavBarHeight =
+        kBottomNavigationBarHeight.obs; // Standard height (56.0)
+    RxDouble statusBarHeight = MediaQuery.of(Get.context!).padding.top.obs;
+    dragHeight = (totalHeight.value -
+            appBarHeight.value -
+            bottomNavBarHeight.value -
+            statusBarHeight.value)
+        .obs;
+    availableHeight = (totalHeight.value -
+            appBarHeight.value -
+            bottomNavBarHeight.value -
+            statusBarHeight.value)
+        .obs;
   }
 
   updateSelectedVideo({required HomeModel homeModel}) async {
-    // youtubePlayerController.value.dispose();
-    selectedVideo.value = homeModel;
+    debugPrint("dragHeight:${dragHeight.value}");
+    dragHeight.value = availableHeight.value * 0.14;
+    isVideoMinimized.value = true;
+
     selectedVideo.refresh();
-    youtubePlayerController.value = YoutubePlayerController(
-        initialVideoId: selectedVideo.value!.videoId,
+    youtubePlayerController.value.dispose();
+
+    var newYoutubeController = YoutubePlayerController(
+        initialVideoId: homeModel.videoId,
         flags: YoutubePlayerFlags(isLive: homeModel.isLive, autoPlay: true));
+
+    youtubePlayerController.value = newYoutubeController;
+    selectedVideo.value = homeModel;
+
     youtubePlayerController.refresh();
-    // youtubePlayerController.value.play();
   }
 
   Future getAllFavorite() async {
@@ -49,13 +77,34 @@ class HomeController extends GetxController {
 
   Future searchYoutube({required String searchQuery}) async {
     try {
+      youtubeChannelImage.clear();
       isLoading.value = true;
       isLoading.refresh();
       VideoSearchList lstSearch = await yt.search.search(searchQuery);
       if (lstSearch.isNotEmpty) {
-        lstVideos.value = List.generate(
-          lstSearch.length,
-          (e) => HomeModel(
+        // for (var video in lstSearch) {
+        //   // var channelInfo = await yt.channels.get(video.channelId);
+        //   var homeModel = HomeModel(
+        //     // channelImageUrl: channelInfo.logoUrl,
+        //     channelImageUrl: "",
+        //     isFavorite: false,
+        //     videoId: video.id.value,
+        //     viewCount: customViewsText(video.engagement.viewCount),
+        //     isLive: video.isLive,
+        //     channelName: video.author,
+        //     videoDuration: video.duration ?? Duration.zero,
+        //     durationAsString:
+        //         customDurationText(video.duration ?? Duration.zero),
+        //     title: video.title,
+        //   );
+        //   lstVideos.add(homeModel);
+        // }
+        lstVideos.value = List.generate(lstSearch.length, (e) {
+          String channelImageUrl = "";
+          debugPrint(lstSearch[e].description);
+          return HomeModel(
+            channelImageUrl: channelImageUrl,
+            description: lstSearch[e].description,
             isFavorite: false,
             videoId: lstSearch[e].id.value,
             viewCount: customViewsText(lstSearch[e].engagement.viewCount),
@@ -65,14 +114,27 @@ class HomeController extends GetxController {
             durationAsString:
                 customDurationText(lstSearch[e].duration ?? Duration.zero),
             title: lstSearch[e].title,
-          ),
-        );
-        lstVideos.refresh();
+          );
+        });
+        // lstVideos.refresh();
         for (var video in lstVideos) {
           var isFavorite = lstFavorite.any((e) => e.videoId == video.videoId);
           video.isFavorite = isFavorite;
         }
         lstVideos.refresh();
+        Future.delayed(const Duration(milliseconds: 400))
+            .whenComplete(() async {
+          for (var vid in lstSearch) {
+            try {
+              var channelInfo = await yt.channels.get(vid.channelId.value);
+              var index = lstSearch.indexOf(vid);
+              lstVideos.value[index].channelImageUrl = channelInfo.logoUrl;
+              lstVideos.refresh();
+            } catch (e) {
+              debugPrint("error:${e.toString()}");
+            }
+          }
+        });
       }
     } catch (e) {
       debugPrint("error: ${e.toString()}");

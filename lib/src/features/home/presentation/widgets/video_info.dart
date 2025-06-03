@@ -23,15 +23,47 @@ Widget videoInfo(
               overflow: TextOverflow.ellipsis),
         ),
       ),
-      SizedBox(
-        width: Get.width * 0.4,
-        child: Text(
-          homeModel.channelName,
-          style: const TextStyle(
-              fontSize: 12,
-              color: Colors.black54,
-              overflow: TextOverflow.ellipsis),
-        ),
+      Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(Get.width * 0.1),
+            child: Image.network(
+              homeModel.channelImageUrl,
+              // "",
+              width: Get.width * 0.04,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+              // height: Get.height * .035,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) {
+                  return child;
+                }
+                return SizedBox(
+                    width: Get.width * 0.04,
+                    height: Get.width * 0.04,
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!,
+                      color: deepOrange,
+                    ));
+              },
+              fit: BoxFit.fill,
+            ),
+          ),
+          SizedBox(
+            width: Get.width * 0.01,
+          ),
+          SizedBox(
+            width: Get.width * 0.35,
+            child: Text(
+              homeModel.channelName,
+              style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black54,
+                  overflow: TextOverflow.ellipsis),
+            ),
+          ),
+        ],
       ),
       Container(
         padding: EdgeInsets.symmetric(horizontal: width * 0.005),

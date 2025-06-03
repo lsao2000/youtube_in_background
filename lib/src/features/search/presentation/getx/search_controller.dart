@@ -19,6 +19,14 @@ class SearchBarController extends GetxController {
   searchForVideo({required String searchQuery}) async {
     var homeController = Get.find<HomeController>();
     homeController.searchYoutube(searchQuery: searchQuery);
+    // whenComplete(() async {
+    // for (var vid in homeController.lstVideos) {
+    //   var index = homeController.lstVideos.value.indexOf(vid);
+    //   // var channelInfo = await homeController.yt.channels.get();
+    //   // lstVideos.value[index].channelImageUrl = channelInfo.logoUrl;
+    // }
+    // lstVideos.refresh();
+    // });
     Get.back();
   }
 
