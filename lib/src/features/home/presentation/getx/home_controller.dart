@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -5,6 +7,11 @@ import 'package:youtube_inbackground_newversion/src/features/home/domain/models/
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/home_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/usecases/home_use_case.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
+
+// import 'package:path/path.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeController extends GetxController {
   final HomeUseCase homeUseCase;
@@ -23,6 +30,7 @@ class HomeController extends GetxController {
   RxDouble statusBarHeight = 0.0.obs;
   RxDouble availableHeight = 0.0.obs;
   RxList<String> youtubeChannelImage = <String>[].obs;
+  RxBool wasMimizingView = false.obs;
 
   Rx<YoutubePlayerController> youtubePlayerController = YoutubePlayerController(
     initialVideoId: 'iLnmTe5Q2Qw',
@@ -204,6 +212,104 @@ class HomeController extends GetxController {
       return lstDuration.join(":");
     } catch (e) {
       return duration.toString();
+    }
+  }
+  //
+  // Future<void> downloadVideo(String videoUrl) async {
+  //   try {
+  //     var ytExplode = YoutubeExplode();
+  //     var video = await ytExplode.videos.get(videoUrl);
+  //
+  //     var manifest = await ytExplode.videos.streamsClient.getManifest(video);
+  //
+  //     var streamInfo = manifest.audioOnly.first;
+  //     var videoStream = manifest.video.first;
+  //
+  //     var audioStream = ytExplode.videos.streamsClient.get(streamInfo);
+  //     var videoFile = await ytExplode.videos.streamsClient.get(videoStream);
+  //     debugPrint(videoFile.first.toString());
+  //     // saveVideo(videoFile: videoFile, title: title)
+  //   } catch (e) {
+  //   } finally {
+  //     yt.close();
+  //   }
+  // }
+
+  // Future<void> saveVideo(
+  //     {required File videoFile, required String title}) async {
+  //   if (Platform.isAndroid) {
+  //     final status = await Permission.storage.request();
+  //   }
+  //   Directory? directory;
+  //   // if (Platform.isAndroid) {
+  //   // Use DCIM directory for videos (standard location)
+  //   directory = await getExternalStorageDirectory();
+  //   // final path = '${directory?.path}/DCIM/Camera'; // Common video storage path
+  //   final savePath = '${directory?.path}/$title.mp4';
+  //
+  //   final videoBytes = await videoFile.readAsBytes();
+  //   final File file = File(savePath);
+  //
+  //   await file.writeAsBytes(videoBytes);
+  //   debugPrint("success to download");
+  //   // } else if (Platform.isIOS) {
+  //   //   // On iOS, use application documents directory
+  //   //   directory = await getApplicationDocumentsDirectory();
+  //   // }
+  //
+  //   // final appDocDir = await getApplicationDocumentsDirectory();
+  // }
+  //
+  Future<String?> downloadAudio(String videoUrl) async {
+    debugPrint("start downloading");
+    final yt = YoutubeExplode();
+    final client = http.Client();
+
+    try {
+      // Get video metadata
+      final video = await yt.videos.get(videoUrl);
+
+      // Get audio-only streams
+      final manifest = await yt.videos.streamsClient.getManifest(video.id);
+      final audioStream = manifest.audioOnly.withHighestBitrate();
+
+      // Get directory
+      final directory = Platform.isAndroid
+          ? await getExternalStorageDirectory()
+          : await getApplicationDocumentsDirectory();
+      if (directory == null) return null;
+
+      // Create file
+      final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      final file = File('${directory.path}/$cleanTitle.mp3');
+
+      // Download with progress
+      final request = await client.send(http.Request('GET', audioStream.url));
+      final contentLength = request.contentLength ?? 0;
+      int received = 0;
+
+      final sink = file.openWrite();
+      await request.stream.listen(
+        (List<int> chunk) {
+          received += chunk.length;
+          debugPrint(
+              'Progress: ${(received / contentLength * 100).toStringAsFixed(1)}%');
+          sink.add(chunk);
+        },
+        onDone: () {
+          debugPrint("done downloading");
+          sink.close();
+        },
+        onError: (e) => throw e,
+      ).asFuture();
+
+      return file.path;
+    } catch (e) {
+      debugPrint('Download failed: $e');
+      return null;
+    } finally {
+      client.close();
+      yt.close();
     }
   }
 }

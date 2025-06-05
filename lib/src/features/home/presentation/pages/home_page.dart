@@ -68,6 +68,8 @@ class HomePage extends StatelessWidget {
               right: 0,
               child: GestureDetector(
                 onVerticalDragEnd: (details) {
+                  controller.isVideoMinimized.value =
+                      controller.wasMimizingView.value ? true : false;
                   controller.dragHeight.value =
                       controller.isVideoMinimized.value
                           ? controller.availableHeight.value * 0.14
@@ -78,19 +80,24 @@ class HomePage extends StatelessWidget {
                       controller.dragHeight.value - details.primaryDelta!;
                   final maxHeight = controller.availableHeight.value;
                   final minHeight = Get.height * 0.1;
+                  controller.dragHeight.value = newHeight;
                   if (newHeight >= minHeight && newHeight <= maxHeight) {
-                    controller.dragHeight.value = newHeight;
                     if (details.primaryDelta! > 0 &&
                         newHeight < maxHeight * 0.9) {
-                      controller.isVideoMinimized.value = true;
+                      controller.wasMimizingView.value = true;
+                      if (newHeight <= Get.height * 0.14) {
+                        controller.isVideoMinimized.value = true;
+                      }
                     } else if (details.primaryDelta! < 0 &&
-                        newHeight > Get.height * 0.2) {
+                        newHeight > Get.height * 0.14) {
                       controller.isVideoMinimized.value = false;
+                      controller.wasMimizingView.value = false;
                     }
                   }
                 },
                 child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 500),
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.decelerate,
                   decoration: BoxDecoration(color: white, boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.3),
@@ -111,7 +118,6 @@ class HomePage extends StatelessWidget {
                           children: [
                             Flexible(
                               child: YoutubePlayer(
-                                // width: Get.width,
                                 key: ValueKey(
                                     controller.youtubePlayerController.value),
                                 controller:
@@ -119,19 +125,85 @@ class HomePage extends StatelessWidget {
                               ),
                             ),
                             if (controller.isVideoMinimized.value)
-                              SizedBox(
-                              // width: Get.width * 0.2,
-                              // width: Get.width * 0.52,
-                                child: Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: Get.width * 0.04,
-                                      vertical: Get.height * 0.01),
-                                  child: Text(
-                                    overflow: TextOverflow.ellipsis,
-                                    controller.selectedVideo.value?.title ?? '',
+                              Column(
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  SizedBox(
+                                    width: Get.width * 0.52,
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: Get.width * 0.04,
+                                          vertical: Get.height * 0.01),
+                                      child: Text(
+                                        overflow: TextOverflow.ellipsis,
+                                        controller.selectedVideo.value?.title ??
+                                            '',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: Get.width * .08,
+                                        height: Get.width * .08,
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                              Get.width * .1),
+                                          child: Image.network(
+                                            controller.selectedVideo.value
+                                                    ?.channelImageUrl ??
+                                                "",
+                                            // "",
+                                            width: Get.width * 0.04,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    const Icon(Icons.error),
+                                            // height: Get.height * .035,
+                                            loadingBuilder: (context, child,
+                                                loadingProgress) {
+                                              if (loadingProgress == null) {
+                                                return child;
+                                              }
+                                              return SizedBox(
+                                                  width: Get.width * 0.08,
+                                                  height: Get.width * 0.08,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    value: loadingProgress
+                                                            .cumulativeBytesLoaded /
+                                                        loadingProgress
+                                                            .expectedTotalBytes!,
+                                                    color: deepOrange,
+                                                  ));
+                                            },
+                                            fit: BoxFit.fill,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: Get.width * 0.37,
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: Get.width * 0.02,
+                                          ),
+                                          child: Text(
+                                            overflow: TextOverflow.ellipsis,
+                                            controller.selectedVideo.value
+                                                    ?.channelName ??
+                                                '',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                ],
+                              )
                           ],
                         ),
                       ),
@@ -226,6 +298,9 @@ class HomePage extends StatelessWidget {
                                     IconButton(
                                       onPressed: () {
                                         debugPrint("download");
+                                        // controller.yt.videos.get("").asStream().
+                                        // controller.downloadAudio(
+                                        //     "https://www.youtube.com/watch?v=${controller.selectedVideo.value?.videoId}");
                                       },
                                       icon: Icon(
                                         Icons.download,

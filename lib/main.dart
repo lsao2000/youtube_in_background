@@ -11,6 +11,7 @@ void main() async {
   try {
     await initHomeDependency();
     initSearchDependy();
+
   } catch (e) {
     debugPrint(e.toString());
   }
