@@ -32,6 +32,8 @@ class HomeController extends GetxController {
   RxDouble availableHeight = 0.0.obs;
   RxList<String> youtubeChannelImage = <String>[].obs;
   RxBool wasMimizingView = false.obs;
+  RxBool isDownloading = false.obs;
+  RxDouble downloadProgress = 0.0.obs;
 
   Rx<YoutubePlayerController> youtubePlayerController = YoutubePlayerController(
     initialVideoId: 'iLnmTe5Q2Qw',
@@ -62,21 +64,24 @@ class HomeController extends GetxController {
   }
 
   updateSelectedVideo({required HomeModel homeModel}) async {
-    debugPrint("dragHeight:${dragHeight.value}");
-    dragHeight.value = availableHeight.value * 0.14;
-    isVideoMinimized.value = true;
+    if (selectedVideo.value != null &&
+        selectedVideo.value!.videoId == homeModel.videoId) {
+    } else {
+      isDownloading.value = false;
+      downloadProgress.value = 0.0;
+      dragHeight.value = availableHeight.value * 0.14;
+      isVideoMinimized.value = true;
+      youtubePlayerController.value.dispose();
 
-    selectedVideo.refresh();
-    youtubePlayerController.value.dispose();
+      var newYoutubeController = YoutubePlayerController(
+          initialVideoId: homeModel.videoId,
+          flags: YoutubePlayerFlags(isLive: homeModel.isLive, autoPlay: true));
 
-    var newYoutubeController = YoutubePlayerController(
-        initialVideoId: homeModel.videoId,
-        flags: YoutubePlayerFlags(isLive: homeModel.isLive, autoPlay: true));
+      youtubePlayerController.value = newYoutubeController;
+      selectedVideo.value = homeModel;
 
-    youtubePlayerController.value = newYoutubeController;
-    selectedVideo.value = homeModel;
-
-    youtubePlayerController.refresh();
+      youtubePlayerController.refresh();
+    }
   }
 
   Future getAllFavorite() async {
@@ -91,23 +96,6 @@ class HomeController extends GetxController {
       isLoading.refresh();
       VideoSearchList lstSearch = await yt.search.search(searchQuery);
       if (lstSearch.isNotEmpty) {
-        // for (var video in lstSearch) {
-        //   // var channelInfo = await yt.channels.get(video.channelId);
-        //   var homeModel = HomeModel(
-        //     // channelImageUrl: channelInfo.logoUrl,
-        //     channelImageUrl: "",
-        //     isFavorite: false,
-        //     videoId: video.id.value,
-        //     viewCount: customViewsText(video.engagement.viewCount),
-        //     isLive: video.isLive,
-        //     channelName: video.author,
-        //     videoDuration: video.duration ?? Duration.zero,
-        //     durationAsString:
-        //         customDurationText(video.duration ?? Duration.zero),
-        //     title: video.title,
-        //   );
-        //   lstVideos.add(homeModel);
-        // }
         lstVideos.value = List.generate(lstSearch.length, (e) {
           String channelImageUrl = "";
           debugPrint(lstSearch[e].description);
@@ -125,7 +113,6 @@ class HomeController extends GetxController {
             title: lstSearch[e].title,
           );
         });
-        // lstVideos.refresh();
         for (var video in lstVideos) {
           var isFavorite = lstFavorite.any((e) => e.videoId == video.videoId);
           video.isFavorite = isFavorite;
@@ -161,7 +148,7 @@ class HomeController extends GetxController {
         lstVideos.value[index].isLoadingFavorite = true;
         await getAllFavorite();
         lstVideos.refresh();
-        Future.delayed(Duration(seconds: 1)).whenComplete(() {
+        Future.delayed(const Duration(seconds: 1)).whenComplete(() {
           lstVideos.value[index].isLoadingFavorite = false;
           lstVideos.value[index].isFavorite =
               !lstVideos.value[index].isFavorite;
@@ -267,7 +254,6 @@ class HomeController extends GetxController {
       ScaffoldMessenger.of(Get.context!).showSnackBar(
           const SnackBar(content: Text('Storage permission denied')));
     } else {
-      debugPrint("Storage permission granted");
       final client = http.Client();
       try {
         // Get video metadata
@@ -285,25 +271,17 @@ class HomeController extends GetxController {
 
           return currentDiff < closestDiff ? stream : closest;
         });
-        // final audioStream = manifest.audioOnly.withHighestBitrate();
-
-        // Get directory
         final directory = Platform.isAndroid
-            ? await getDownloadsDirectory()
+            ? Directory('/storage/emulated/0/Music')
             : await getApplicationDocumentsDirectory();
         if (directory == null) return null;
-
-        // Create file
-        final dir = Directory(
-            '/storage/emulated/0/Android/data/com.example.youtube_inbackground_newversion/files/Music');
-
         // Create directory if it doesn't exist
-        if (!await dir.exists()) {
-          await dir.create(recursive: true);
-        }
+        // if (!await directory.exists()) {
+        //   await directory.create(recursive: true);
+        // }
 
         final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-        final file = File('${dir.path}/$cleanTitle.mp3');
+        final file = File('${directory.path}/$cleanTitle.mp3');
 
         // Download with progress
         final request =
@@ -317,6 +295,8 @@ class HomeController extends GetxController {
             received += chunk.length;
             debugPrint(
                 'Progress: ${(received / contentLength * 100).toStringAsFixed(1)}%');
+            downloadProgress.value = received / contentLength * 100;
+            downloadProgress.refresh();
             sink.add(chunk);
           },
           onDone: () {
@@ -332,13 +312,12 @@ class HomeController extends GetxController {
         return null;
       } finally {
         client.close();
-        yt.close();
       }
     }
+    return null;
   }
 
   showAvailableFormats() async {
-    debugPrint("showing available formats");
     final result = <String, List<StreamInfo>>{
       'mp4': [],
       'mp3': [],
@@ -379,6 +358,4 @@ class HomeController extends GetxController {
     }
     return false;
   }
-
-// Usage:
 }

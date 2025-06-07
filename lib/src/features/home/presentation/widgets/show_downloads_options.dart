@@ -43,9 +43,12 @@ Widget showDownloadsOptions(
                     : Text("${stream.qualityLabel} - ${stream.size}"),
                 onTap: () {
                   // Handle download action
-                  Get.find<HomeController>().downloadAudio(
+                  var homeController = Get.find<HomeController>();
+                  homeController.downloadAudio(
                       stream.bitrate.kiloBitsPerSecond ~/ 10 * 10);
-                  // Get.back(result: stream);
+                  homeController.isDownloading.value = true;
+                  homeController.isDownloading.refresh();
+                  Get.back();
                 },
               );
             }).toList(),

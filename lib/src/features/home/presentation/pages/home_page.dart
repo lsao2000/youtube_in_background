@@ -300,10 +300,53 @@ class HomePage extends StatelessWidget {
                                         // controller.downloadAudio(
                                         //     "https://www.youtube.com/watch?v=${controller.selectedVideo.value?.videoId}");
                                       },
-                                      icon: Icon(
-                                        Icons.download,
-                                        color: deepOrange,
-                                      ),
+                                      icon: controller.isDownloading.value
+                                          ? Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                SizedBox(
+                                                  width: Get.width * 0.06,
+                                                  height: Get.height * 0.03,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: deepOrange,
+                                                    value: controller
+                                                            .downloadProgress
+                                                            .value /
+                                                        100,
+                                                  ),
+                                                ),
+                                                controller.downloadProgress
+                                                            .value ==
+                                                        100
+                                                    ? Icon(
+                                                        Icons.download_done,
+                                                        color: deepOrange,
+                                                        size: Get.width * 0.04,
+                                                      )
+                                                    : SizedBox(
+                                                        child: Icon(
+                                                          size:
+                                                              Get.width * 0.04,
+                                                          Icons.download,
+                                                          color: deepOrange,
+                                                        ),
+                                                      )
+                                              ],
+                                            )
+
+                                          // CircularProgressIndicator(
+                                          //     color: deepOrange,
+                                          //     value: controller
+                                          //             .downloadProgress.value /
+                                          //         100,
+                                          //
+                                          //   )
+                                          : Icon(
+                                              Icons.download,
+                                              color: deepOrange,
+                                            ),
                                     ),
                                     SizedBox(
                                       width: Get.width * 0.02,
