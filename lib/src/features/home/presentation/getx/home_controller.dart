@@ -1,15 +1,16 @@
 import 'dart:io';
 
+// import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/home_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/usecases/home_use_case.dart';
+import 'package:youtube_inbackground_newversion/src/features/home/presentation/widgets/show_downloads_options.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-
 // import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -260,56 +261,124 @@ class HomeController extends GetxController {
   //   // final appDocDir = await getApplicationDocumentsDirectory();
   // }
   //
-  Future<String?> downloadAudio(String videoUrl) async {
-    debugPrint("start downloading");
-    final yt = YoutubeExplode();
-    final client = http.Client();
+  Future<String?> downloadAudio(int targetKbps) async {
+    final hasPermission = await requestStoragePermission();
+    if (!hasPermission) {
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+          const SnackBar(content: Text('Storage permission denied')));
+    } else {
+      debugPrint("Storage permission granted");
+      final client = http.Client();
+      try {
+        // Get video metadata
+        final video = await yt.videos.get(selectedVideo.value!.videoId);
 
-    try {
-      // Get video metadata
-      final video = await yt.videos.get(videoUrl);
+        // Get audio-only streams
+        final manifest = await yt.videos.streamsClient.getManifest(video.id);
+        final audioStream = manifest.audioOnly.fold(null,
+            (StreamInfo? closest, StreamInfo stream) {
+          final currentDiff =
+              (stream.bitrate.kiloBitsPerSecond - targetKbps).abs();
+          final closestDiff = closest != null
+              ? (closest.bitrate.kiloBitsPerSecond - targetKbps).abs()
+              : double.infinity;
 
-      // Get audio-only streams
-      final manifest = await yt.videos.streamsClient.getManifest(video.id);
-      final audioStream = manifest.audioOnly.withHighestBitrate();
+          return currentDiff < closestDiff ? stream : closest;
+        });
+        // final audioStream = manifest.audioOnly.withHighestBitrate();
 
-      // Get directory
-      final directory = Platform.isAndroid
-          ? await getExternalStorageDirectory()
-          : await getApplicationDocumentsDirectory();
-      if (directory == null) return null;
+        // Get directory
+        final directory = Platform.isAndroid
+            ? await getDownloadsDirectory()
+            : await getApplicationDocumentsDirectory();
+        if (directory == null) return null;
 
-      // Create file
-      final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-      final file = File('${directory.path}/$cleanTitle.mp3');
+        // Create file
+        final dir = Directory(
+            '/storage/emulated/0/Android/data/com.example.youtube_inbackground_newversion/files/Music');
 
-      // Download with progress
-      final request = await client.send(http.Request('GET', audioStream.url));
-      final contentLength = request.contentLength ?? 0;
-      int received = 0;
+        // Create directory if it doesn't exist
+        if (!await dir.exists()) {
+          await dir.create(recursive: true);
+        }
 
-      final sink = file.openWrite();
-      await request.stream.listen(
-        (List<int> chunk) {
-          received += chunk.length;
-          debugPrint(
-              'Progress: ${(received / contentLength * 100).toStringAsFixed(1)}%');
-          sink.add(chunk);
-        },
-        onDone: () {
-          debugPrint("done downloading");
-          sink.close();
-        },
-        onError: (e) => throw e,
-      ).asFuture();
+        final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+        final file = File('${dir.path}/$cleanTitle.mp3');
 
-      return file.path;
-    } catch (e) {
-      debugPrint('Download failed: $e');
-      return null;
-    } finally {
-      client.close();
-      yt.close();
+        // Download with progress
+        final request =
+            await client.send(http.Request('GET', audioStream!.url));
+        final contentLength = request.contentLength ?? 0;
+        int received = 0;
+
+        final sink = file.openWrite();
+        await request.stream.listen(
+          (List<int> chunk) {
+            received += chunk.length;
+            debugPrint(
+                'Progress: ${(received / contentLength * 100).toStringAsFixed(1)}%');
+            sink.add(chunk);
+          },
+          onDone: () {
+            debugPrint("done downloading");
+            sink.close();
+          },
+          onError: (e) => throw e,
+        ).asFuture();
+
+        return file.path;
+      } catch (e) {
+        debugPrint('Download failed: $e');
+        return null;
+      } finally {
+        client.close();
+        yt.close();
+      }
     }
   }
+
+  showAvailableFormats() async {
+    debugPrint("showing available formats");
+    final result = <String, List<StreamInfo>>{
+      'mp4': [],
+      'mp3': [],
+    };
+
+    if (selectedVideo.value == null) {
+      debugPrint("No video selected");
+    } else if (selectedVideo.value!.videoId.isEmpty) {
+      debugPrint("Selected video ID is empty");
+    } else {
+      await yt.videos.streamsClient
+          .getManifest(selectedVideo.value!.videoId)
+          .then((value) async {
+        // Categorize all available streams
+        result['mp4'] = value.video
+            .where((s) => s.container == StreamContainer.mp4)
+            .toList();
+        result['mp3'] = value.audio
+            .where((s) =>
+                s.container == StreamContainer.webM ||
+                s.container == StreamContainer.m3u8)
+            .toList();
+        // Sort each category by quality
+        result['mp4']!.sort((a, b) => b.qualityLabel.compareTo(a.qualityLabel));
+        result['mp3']!.sort((a, b) => b.bitrate.compareTo(a.bitrate));
+        showDialog(
+          context: Get.context!,
+          builder: (context) => showDownloadsOptions(Get.context!, result),
+        );
+      });
+    }
+  }
+
+  Future<bool> requestStoragePermission() async {
+    await Permission.storage.request();
+    if (await Permission.storage.request().isGranted) {
+      return true;
+    }
+    return false;
+  }
+
+// Usage:
 }

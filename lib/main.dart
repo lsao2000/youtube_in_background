@@ -4,10 +4,15 @@ import 'package:get/get.dart';
 import 'package:youtube_inbackground_newversion/src/core/routes/route_pages.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/home_dependency_injections.dart';
 import 'package:youtube_inbackground_newversion/src/features/search/search_dependency_injections.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (Platform.isLinux) {}
+
+  // if (Platform.isLinux) {
+  //   // await InAppWebViewController.setWebContentsDebuggingEnabled(true);
+  // }
+  // DD69-C273
   try {
     await initHomeDependency();
     initSearchDependy();
@@ -29,15 +34,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

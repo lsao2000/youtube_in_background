@@ -244,28 +244,26 @@ class HomePage extends StatelessWidget {
                                           controller.selectedVideo.value
                                                   ?.channelImageUrl ??
                                               "",
-                                          // "",
                                           width: Get.width * 0.04,
                                           errorBuilder:
                                               (context, error, stackTrace) =>
                                                   const Icon(Icons.error),
-                                          // height: Get.height * .035,
                                           loadingBuilder: (context, child,
                                               loadingProgress) {
                                             if (loadingProgress == null) {
                                               return child;
                                             }
                                             return SizedBox(
-                                                width: Get.width * 0.08,
-                                                height: Get.width * 0.08,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  value: loadingProgress
-                                                          .cumulativeBytesLoaded /
-                                                      loadingProgress
-                                                          .expectedTotalBytes!,
-                                                  color: deepOrange,
-                                                ));
+                                              width: Get.width * 0.08,
+                                              height: Get.width * 0.08,
+                                              child: CircularProgressIndicator(
+                                                value: loadingProgress
+                                                        .cumulativeBytesLoaded /
+                                                    loadingProgress
+                                                        .expectedTotalBytes!,
+                                                color: deepOrange,
+                                              ),
+                                            );
                                           },
                                           fit: BoxFit.fill,
                                         ),
@@ -297,7 +295,7 @@ class HomePage extends StatelessWidget {
                                     ),
                                     IconButton(
                                       onPressed: () {
-                                        debugPrint("download");
+                                        controller.showAvailableFormats();
                                         // controller.yt.videos.get("").asStream().
                                         // controller.downloadAudio(
                                         //     "https://www.youtube.com/watch?v=${controller.selectedVideo.value?.videoId}");
