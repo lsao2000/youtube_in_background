@@ -202,26 +202,8 @@ class HomeController extends GetxController {
       return duration.toString();
     }
   }
+
   //
-  // Future<void> downloadVideo(String videoUrl) async {
-  //   try {
-  //     var ytExplode = YoutubeExplode();
-  //     var video = await ytExplode.videos.get(videoUrl);
-  //
-  //     var manifest = await ytExplode.videos.streamsClient.getManifest(video);
-  //
-  //     var streamInfo = manifest.audioOnly.first;
-  //     var videoStream = manifest.video.first;
-  //
-  //     var audioStream = ytExplode.videos.streamsClient.get(streamInfo);
-  //     var videoFile = await ytExplode.videos.streamsClient.get(videoStream);
-  //     debugPrint(videoFile.first.toString());
-  //     // saveVideo(videoFile: videoFile, title: title)
-  //   } catch (e) {
-  //   } finally {
-  //     yt.close();
-  //   }
-  // }
 
   // Future<void> saveVideo(
   //     {required File videoFile, required String title}) async {
@@ -248,6 +230,60 @@ class HomeController extends GetxController {
   //   // final appDocDir = await getApplicationDocumentsDirectory();
   // }
   //
+  Future<void> downloadVideo(String videoQuality) async {
+    final hasPermission = await requestStoragePermission();
+    if (!hasPermission) {
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+          const SnackBar(content: Text('Storage permission denied')));
+    } else {
+      final client = http.Client();
+      try {
+        debugPrint("downaloading video");
+        var video = await yt.videos.get(selectedVideo.value!.videoId);
+        var manifest = await yt.videos.streamsClient.getManifest(video.id);
+        debugPrint("videoQuality: $videoQuality");
+        // Get the stream with the specified quality
+        var stream = manifest.video.where((s) {
+          return s.qualityLabel == videoQuality ||
+              s.qualityLabel.contains(videoQuality);
+        }).first;
+        debugPrint("stream: ${stream.toString()}");
+        final directory = Platform.isAndroid
+            ? await getDownloadsDirectory()
+            : await getApplicationDocumentsDirectory();
+        final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+        // final cleanTitle = video.title;
+        final file = File('${directory!.path}/$cleanTitle.mp4');
+        final request = await client.send(http.Request('GET', stream!.url));
+        final contentLength = request.contentLength ?? 0;
+        int received = 0;
+
+        final sink = file.openWrite();
+        await request.stream.listen(
+          (List<int> chunk) {
+            received += chunk.length;
+            debugPrint(
+                'Progress: ${(received / contentLength * 100).toStringAsFixed(1)}%');
+            downloadProgress.value = received / contentLength * 100;
+            downloadProgress.refresh();
+            sink.add(chunk);
+          },
+          onDone: () {
+            debugPrint("done downloading");
+            sink.close();
+          },
+          onError: (e) => throw e,
+        ).asFuture();
+      } catch (e) {
+        debugPrint("error: ${e.toString()}");
+      } finally {
+        // Ensure the client is closed after the download
+        // This is important to free up resources
+        client.close();
+      }
+    }
+  }
+
   Future<String?> downloadAudio(int targetKbps) async {
     final hasPermission = await requestStoragePermission();
     if (!hasPermission) {
@@ -258,7 +294,6 @@ class HomeController extends GetxController {
       try {
         // Get video metadata
         final video = await yt.videos.get(selectedVideo.value!.videoId);
-
         // Get audio-only streams
         final manifest = await yt.videos.streamsClient.getManifest(video.id);
         final audioStream = manifest.audioOnly.fold(null,
@@ -268,20 +303,14 @@ class HomeController extends GetxController {
           final closestDiff = closest != null
               ? (closest.bitrate.kiloBitsPerSecond - targetKbps).abs()
               : double.infinity;
-
           return currentDiff < closestDiff ? stream : closest;
         });
         final directory = Platform.isAndroid
-            ? Directory('/storage/emulated/0/Music')
+            ? await getDownloadsDirectory()
             : await getApplicationDocumentsDirectory();
-        if (directory == null) return null;
-        // Create directory if it doesn't exist
-        // if (!await directory.exists()) {
-        //   await directory.create(recursive: true);
-        // }
-
-        final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-        final file = File('${directory.path}/$cleanTitle.mp3');
+        // final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+        final cleanTitle = video.title;
+        final file = File('${directory!.path}/$cleanTitle.mp3');
 
         // Download with progress
         final request =
@@ -317,6 +346,7 @@ class HomeController extends GetxController {
     return null;
   }
 
+  //
   showAvailableFormats() async {
     final result = <String, List<StreamInfo>>{
       'mp4': [],

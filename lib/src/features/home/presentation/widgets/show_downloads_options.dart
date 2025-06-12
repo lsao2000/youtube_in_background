@@ -44,8 +44,17 @@ Widget showDownloadsOptions(
                 onTap: () {
                   // Handle download action
                   var homeController = Get.find<HomeController>();
-                  homeController.downloadAudio(
-                      stream.bitrate.kiloBitsPerSecond ~/ 10 * 10);
+                  if (entry.key == "mp3") {
+                    homeController.downloadAudio(
+                      stream.bitrate.kiloBitsPerSecond ~/ 10 * 10,
+                    );
+                  } else {
+                    homeController.downloadVideo(
+                      stream.qualityLabel,
+                      // stream.size,
+                      // stream.url.toString(),
+                    );
+                  }
                   homeController.isDownloading.value = true;
                   homeController.isDownloading.refresh();
                   Get.back();
