@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:youtube_inbackground_newversion/src/core/styles/theme_colors.dart';
@@ -128,20 +129,30 @@ class HomePage extends StatelessWidget {
                               Column(
                                 mainAxisSize: MainAxisSize.max,
                                 children: [
-                                  SizedBox(
-                                    width: Get.width * 0.52,
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: Get.width * 0.04,
-                                          vertical: Get.height * 0.01),
-                                      child: Text(
-                                        overflow: TextOverflow.ellipsis,
-                                        controller.selectedVideo.value?.title ??
-                                            '',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
+                                  Row(
+                                    children: [
+                                      SizedBox(
+                                        width: Get.width * 0.42,
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: Get.width * 0.04,
+                                              vertical: Get.height * 0.01),
+                                          child: Text(
+                                            overflow: TextOverflow.ellipsis,
+                                            controller.selectedVideo.value
+                                                    ?.title ??
+                                                '',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      IconButton(
+                                          onPressed: () {
+                                              controller.resetAll();
+                                          },
+                                          icon: const Icon(Icons.close))
+                                    ],
                                   ),
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -273,20 +284,23 @@ class HomePage extends StatelessWidget {
                                       padding: EdgeInsets.symmetric(
                                           horizontal: Get.width * 0.04,
                                           vertical: Get.height * 0.01),
-                                      child: Text(
-                                        controller.selectedVideo.value
-                                                ?.channelName ??
-                                            "",
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.black54,
-                                            overflow: TextOverflow.ellipsis),
+                                      child: SizedBox(
+                                        width: Get.width * 0.37,
+                                        child: Text(
+                                          controller.selectedVideo.value
+                                                  ?.channelName ??
+                                              "",
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold),
+                                        ),
                                       ),
                                     ),
                                     const Expanded(child: Text("")),
                                     IconButton(
                                       onPressed: () {
-                                        debugPrint("share");
+                                        controller.shareVideo();
                                       },
                                       icon: Icon(
                                         Icons.share,
@@ -296,9 +310,6 @@ class HomePage extends StatelessWidget {
                                     IconButton(
                                       onPressed: () {
                                         controller.showAvailableFormats();
-                                        // controller.yt.videos.get("").asStream().
-                                        // controller.downloadAudio(
-                                        //     "https://www.youtube.com/watch?v=${controller.selectedVideo.value?.videoId}");
                                       },
                                       icon: controller.isDownloading.value
                                           ? Stack(

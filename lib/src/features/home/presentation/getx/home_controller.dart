@@ -1,8 +1,8 @@
 import 'dart:io';
 
-// import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/home_model.dart';
@@ -34,6 +34,14 @@ class HomeController extends GetxController {
   RxBool wasMimizingView = false.obs;
   RxBool isDownloading = false.obs;
   RxDouble downloadProgress = 0.0.obs;
+  final result = <String, List<StreamInfo>>{
+    'mp3': [],
+  };
+  resetAll() {
+    selectedVideo.value = null;
+    // youtubePlayerController.value.dispose();
+    selectedVideo.refresh();
+  }
 
   Rx<YoutubePlayerController> youtubePlayerController = YoutubePlayerController(
     initialVideoId: 'iLnmTe5Q2Qw',
@@ -79,8 +87,8 @@ class HomeController extends GetxController {
 
       youtubePlayerController.value = newYoutubeController;
       selectedVideo.value = homeModel;
-
       youtubePlayerController.refresh();
+      getAvailableFormats();
     }
   }
 
@@ -230,59 +238,6 @@ class HomeController extends GetxController {
   //   // final appDocDir = await getApplicationDocumentsDirectory();
   // }
   //
-  Future<void> downloadVideo(String videoQuality) async {
-    final hasPermission = await requestStoragePermission();
-    if (!hasPermission) {
-      ScaffoldMessenger.of(Get.context!).showSnackBar(
-          const SnackBar(content: Text('Storage permission denied')));
-    } else {
-      final client = http.Client();
-      try {
-        debugPrint("downaloading video");
-        var video = await yt.videos.get(selectedVideo.value!.videoId);
-        var manifest = await yt.videos.streamsClient.getManifest(video.id);
-        debugPrint("videoQuality: $videoQuality");
-        // Get the stream with the specified quality
-        var stream = manifest.video.where((s) {
-          return s.qualityLabel == videoQuality ||
-              s.qualityLabel.contains(videoQuality);
-        }).first;
-        debugPrint("stream: ${stream.toString()}");
-        final directory = Platform.isAndroid
-            ? await getDownloadsDirectory()
-            : await getApplicationDocumentsDirectory();
-        final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-        // final cleanTitle = video.title;
-        final file = File('${directory!.path}/$cleanTitle.mp4');
-        final request = await client.send(http.Request('GET', stream!.url));
-        final contentLength = request.contentLength ?? 0;
-        int received = 0;
-
-        final sink = file.openWrite();
-        await request.stream.listen(
-          (List<int> chunk) {
-            received += chunk.length;
-            debugPrint(
-                'Progress: ${(received / contentLength * 100).toStringAsFixed(1)}%');
-            downloadProgress.value = received / contentLength * 100;
-            downloadProgress.refresh();
-            sink.add(chunk);
-          },
-          onDone: () {
-            debugPrint("done downloading");
-            sink.close();
-          },
-          onError: (e) => throw e,
-        ).asFuture();
-      } catch (e) {
-        debugPrint("error: ${e.toString()}");
-      } finally {
-        // Ensure the client is closed after the download
-        // This is important to free up resources
-        client.close();
-      }
-    }
-  }
 
   Future<String?> downloadAudio(int targetKbps) async {
     final hasPermission = await requestStoragePermission();
@@ -308,8 +263,8 @@ class HomeController extends GetxController {
         final directory = Platform.isAndroid
             ? await getDownloadsDirectory()
             : await getApplicationDocumentsDirectory();
-        // final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-        final cleanTitle = video.title;
+        final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+        // final cleanTitle = video.title;
         final file = File('${directory!.path}/$cleanTitle.mp3');
 
         // Download with progress
@@ -334,7 +289,6 @@ class HomeController extends GetxController {
           },
           onError: (e) => throw e,
         ).asFuture();
-
         return file.path;
       } catch (e) {
         debugPrint('Download failed: $e');
@@ -346,13 +300,39 @@ class HomeController extends GetxController {
     return null;
   }
 
-  //
-  showAvailableFormats() async {
-    final result = <String, List<StreamInfo>>{
-      'mp4': [],
-      'mp3': [],
-    };
+  shareVideo() async {
+    if (selectedVideo.value == null) {
+      debugPrint("No video selected to share");
+    } else if (selectedVideo.value!.videoId.isEmpty) {
+      debugPrint("Selected video ID is empty");
+    } else {
+      final String videoUrl =
+          "https://www.youtube.com/watch?v=${selectedVideo.value!.videoId}";
+      final Uri shareUri = Uri.parse(videoUrl);
+      try {
+        // if (await canLaunchUrl(shareUri)) {
+        // await launchUrl(
+        await SharePlus.instance.share(
+          ShareParams(
+            // text: "Check out this video: ${selectedVideo.value!.title}",
+            uri: shareUri,
+            // url: shareUri,
+          ),
+        );
+        //   shareUri,
+        //   mode: LaunchMode.externalApplication,
+        // );
+        // } else {
+        // debugPrint("Could not launch URL: $videoUrl");
+        // }
+      } catch (e) {
+        debugPrint("Error sharing video: ${e.toString()}");
+      }
+    }
+  }
 
+  //
+  getAvailableFormats() async {
     if (selectedVideo.value == null) {
       debugPrint("No video selected");
     } else if (selectedVideo.value!.videoId.isEmpty) {
@@ -362,25 +342,138 @@ class HomeController extends GetxController {
           .getManifest(selectedVideo.value!.videoId)
           .then((value) async {
         // Categorize all available streams
-        result['mp4'] = value.video
-            .where((s) => s.container == StreamContainer.mp4)
-            .toList();
+        result.clear();
         result['mp3'] = value.audio
             .where((s) =>
                 s.container == StreamContainer.webM ||
                 s.container == StreamContainer.m3u8)
             .toList();
         // Sort each category by quality
-        result['mp4']!.sort((a, b) => b.qualityLabel.compareTo(a.qualityLabel));
         result['mp3']!.sort((a, b) => b.bitrate.compareTo(a.bitrate));
-        showDialog(
-          context: Get.context!,
-          builder: (context) => showDownloadsOptions(Get.context!, result),
-        );
+
+        // showDialog(
+        //   context: Get.context!,
+        //   builder: (context) => showDownloadsOptions(Get.context!, result),
+        // );
       });
     }
   }
 
+  Future showAvailableFormats() async {
+    showDialog(
+      context: Get.context!,
+      builder: (context) => showDownloadsOptions(Get.context!, result),
+    );
+  }
+
+  // Future<void> downloadWithRetry(String url, String savePath) async {
+  //   final dio = Dio();
+  //   const maxRetries = 3;
+  //   int attempt = 0;
+  //
+  //   while (attempt < maxRetries) {
+  //     try {
+  //       await dio.download(
+  //         url,
+  //         savePath,
+  //         onReceiveProgress: (received, total) {
+  //           downloadProgress.value = (received / total * 100);
+  //           downloadProgress.refresh();
+  //         },
+  //         options: Options(
+  //           headers: {
+  //             'Connection': 'keep-alive',
+  //             'User-Agent':
+  //                 'Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0',
+  //           },
+  //           receiveTimeout: const Duration(minutes: 10),
+  //         ),
+  //       );
+  //       return; // Success!
+  //     } catch (e) {
+  //       attempt++;
+  //       if (attempt >= maxRetries) rethrow;
+  //       await Future.delayed(
+  //           Duration(seconds: attempt * 2)); // Exponential backoff
+  //     }
+  //   }
+  // }
+  //
+  // Future<void> downloadUsingDio(String videoQuality) async {
+  //   try {
+  //     final hasPermission = await requestStoragePermission();
+  //     if (!hasPermission) {
+  //       ScaffoldMessenger.of(Get.context!).showSnackBar(
+  //           const SnackBar(content: Text('Storage permission denied')));
+  //       return;
+  //     }
+  //
+  //     // Fetch fresh stream URL
+  //     var video = await yt.videos.get(selectedVideo.value!.videoId);
+  //     var manifest = await yt.videos.streamsClient.getManifest(video.id);
+  //     var stream =
+  //         manifest.video.where((s) => s.qualityLabel == videoQuality).first;
+  //
+  //     // Prepare save path
+  //     final directory = Platform.isAndroid
+  //         ? await getDownloadsDirectory()
+  //         : await getApplicationDocumentsDirectory();
+  //     final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+  //     final file = File('${directory!.path}/$cleanTitle.mp4');
+  //
+  //     // Download with retries
+  //     await downloadWithRetry(stream.url.toString(), file.path);
+  //
+  //     Get.snackbar('Success', 'Video downloaded to ${file.path}');
+  //   } catch (e) {
+  //     debugPrint("Download failed: $e");
+  //     Get.snackbar('Error', 'Failed to download: ${e.toString()}');
+  //   }
+  // }
+
+  // Future<void> downloadUsingDio(String videoQuality) async {
+  //   final hasPermission = await requestStoragePermission();
+  //   if (!hasPermission) {
+  //     ScaffoldMessenger.of(Get.context!).showSnackBar(
+  //         const SnackBar(content: Text('Storage permission denied')));
+  //     return;
+  //   }
+  //   // try {
+  //     var video = await yt.videos.get(selectedVideo.value!.videoId);
+  //     var manifest = await yt.videos.streamsClient.getManifest(video.id);
+  //     var stream = manifest.video.where((s) {
+  //       return s.qualityLabel == videoQuality ||
+  //           s.qualityLabel.contains(videoQuality);
+  //     }).first;
+  //     final directory = Platform.isAndroid
+  //         ? await getDownloadsDirectory()
+  //         : await getApplicationDocumentsDirectory();
+  //     final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+  //     final file = File('${directory!.path}/$cleanTitle.mp4');
+  //     final dio = Dio();
+  //     await dio.download(
+  //       stream.url.toString(),
+  //       file.path,
+  //       onReceiveProgress: (received, total) {
+  //         if (total != -1) {
+  //           downloadProgress.value = received / total * 100;
+  //           downloadProgress.refresh();
+  //           debugPrint(
+  //               'Progress: ${(received / total * 100).toStringAsFixed(1)}%');
+  //         }
+  //       },
+  //       options: Options(
+  //         responseType: ResponseType.bytes,
+  //         headers: {'Connection': 'keep-alive'},
+  //         // followRedirects: true,
+  //         receiveTimeout: const Duration(minutes: 6),
+  //       ),
+  //     );
+  //   // } catch (e) {
+  //   //   debugPrint("Error downloading video: ${e.toString()}");
+  //   // }
+  // }
+  //
   Future<bool> requestStoragePermission() async {
     await Permission.storage.request();
     if (await Permission.storage.request().isGranted) {
