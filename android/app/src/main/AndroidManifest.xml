@@ -10,7 +10,7 @@
     <!-- For Android 11+ -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <application
-        android:label="youtube_inbackground_newversion"
+        android:label="BackTube"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <service android:name="com.ryanheise.audioservice.AudioService"

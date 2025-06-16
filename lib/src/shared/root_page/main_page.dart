@@ -30,9 +30,12 @@ class MainPage extends GetView<MainController> {
           ),
         ],
         title: Text(
-          "Y&B",
+          "BackTube",
           style: TextStyle(
-              color: brandColor, fontSize: 30.0, fontWeight: FontWeight.bold),
+              // fontFamily: "inter",
+              color: brandColor,
+              fontSize: 30.0,
+              fontWeight: FontWeight.bold),
         ),
       ),
       body: Obx(() => pages[controller.currentTabIndex.value]),
