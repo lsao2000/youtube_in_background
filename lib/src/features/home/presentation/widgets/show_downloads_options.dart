@@ -28,6 +28,7 @@ Widget showDownloadsOptions(
           return ExpansionTile(
             title: Text(key),
             children: streams.map((stream) {
+
               return ListTile(
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
