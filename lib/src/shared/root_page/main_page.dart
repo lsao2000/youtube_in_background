@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:youtube_inbackground_newversion/src/features/download/presentation/pages/download_page.dart';
 import 'package:youtube_inbackground_newversion/src/features/search/presentation/view/search_page.dart';
 import 'package:youtube_inbackground_newversion/src/shared/root_page/main_controller.dart';
 import 'package:youtube_inbackground_newversion/src/features/favorite/presentation/pages/favorite_page.dart';
@@ -10,10 +11,14 @@ import 'package:youtube_inbackground_newversion/utils/colors.dart';
 
 class MainPage extends GetView<MainController> {
   MainPage({super.key});
-  final pages = [HomePage(), FavoritePage()];
+  final pages = [
+    HomePage(),
+    FavoritePage(),
+    const DownloadPage(),
+  ];
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.of(context).size.width;
+    // double width = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: appBarColor,
@@ -22,7 +27,7 @@ class MainPage extends GetView<MainController> {
             onPressed: () async {
               // init();
               await showSearch(context: context, delegate: SearchPage());
-              // Get.toNamed("");
+              // Get.toNamed("/search");
             },
             icon: Icon(
               Icons.search,
@@ -51,6 +56,8 @@ class MainPage extends GetView<MainController> {
               BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
               BottomNavigationBarItem(
                   icon: Icon(Icons.favorite), label: "Favorite"),
+              BottomNavigationBarItem(
+                  icon: Icon(Icons.download), label: "Downloads"),
             ],
           )),
     );

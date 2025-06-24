@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/presentation/getx/home_controller.dart';
 import 'package:youtube_inbackground_newversion/src/features/search/domain/models/search_history.dart';

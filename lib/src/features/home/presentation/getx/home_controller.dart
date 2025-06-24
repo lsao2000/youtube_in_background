@@ -247,6 +247,7 @@ class HomeController extends GetxController {
   // }
   //
   Future<String?> downloadAudio(int targetKbps) async {
+    downloadProgress.value = 0.0;
     final hasPermission = await requestStoragePermission();
     if (!hasPermission) {
       ScaffoldMessenger.of(Get.context!).showSnackBar(
@@ -323,6 +324,7 @@ class HomeController extends GetxController {
                 filename: cleanTitle,
                 isComplete: true,
               );
+              downloadProgress.refresh();
             } else {
               lastProgress = progress;
               await _updateDownloadNotification(
@@ -335,6 +337,8 @@ class HomeController extends GetxController {
 
             sink.add(chunk);
           },
+          // @s'@s\@s;@s/@s,
+          // ✔️
           onDone: () async {
             await sink.close();
             debugPrint("Download completed");
@@ -346,9 +350,6 @@ class HomeController extends GetxController {
               filename: cleanTitle,
               isComplete: true,
             );
-
-            downloadProgress.value = 0.0;
-            downloadProgress.refresh();
           },
           onError: (e) async {
             await sink.close();
@@ -393,13 +394,12 @@ class HomeController extends GetxController {
       channelDescription: 'Download progress notifications',
       importance: Importance.low,
       priority: Priority.low,
-      showProgress: true,
+      showProgress: !isComplete,
       maxProgress: 100,
       progress: progress,
       onlyAlertOnce: true,
       ongoing: !isComplete,
       autoCancel: isComplete,
-      // icon: 'ic_notification',
     );
 
     final platformChannelSpecifics = NotificationDetails(
@@ -411,88 +411,9 @@ class HomeController extends GetxController {
       isComplete
           ? 'Download complete'
           : 'Downloading ${filename.substring(0, min(20, filename.length))}...',
-      isComplete ? 'Audio downloaded successfully' : '$progress% complete',
+      isComplete ? ' ✔️ Audio downloaded successfully' : '$progress% complete',
       platformChannelSpecifics,
     );
-  }
-
-  // Future<String?> downloadAudio(int targetKbps) async {
-  //   final hasPermission = await requestStoragePermission();
-  //   if (!hasPermission) {
-  //     ScaffoldMessenger.of(Get.context!).showSnackBar(
-  //         const SnackBar(content: Text('Storage permission denied')));
-  //   } else {
-  //     var yte = YoutubeExplode();
-  //     final client = http.Client();
-  //     // try {
-  //     // Get video metadata
-  //     final video = await yte.videos.get(selectedVideo.value!.videoId);
-  //     // Get audio-only streams
-  //     final manifest = await yte.videos.streamsClient.getManifest(video.id);
-
-  //     final audioStream = manifest.audioOnly.fold(null,
-  //         (StreamInfo? closest, StreamInfo stream) {
-  //       final currentDiff =
-  //           (stream.bitrate.kiloBitsPerSecond - targetKbps).abs();
-  //       final closestDiff = closest != null
-  //           ? (closest.bitrate.kiloBitsPerSecond - targetKbps).abs()
-  //           : double.infinity;
-  //       return currentDiff < closestDiff ? stream : closest;
-  //     });
-  //     Directory directory;
-  //     if (Platform.isAndroid) {
-  //       directory = Directory('/storage/emulated/0/Music/');
-  //     } else {
-  //       directory = await getApplicationDocumentsDirectory();
-  //     }
-  //
-  //     final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-  //     final file = File('${directory.path}/$cleanTitle.mp3');
-  //
-  //     // Download with progress
-  //     final request = await client.send(http.Request('GET', audioStream!.url));
-  //     final contentLength = request.contentLength ?? 0;
-  //     int received = 0;
-  //
-  //     final sink = file.openWrite();
-  //     await request.stream
-  //         .listen(
-  //           (List<int> chunk) {
-  //             received += chunk.length;
-  //             downloadProgress.value = received / contentLength * 100;
-  //             downloadProgress.refresh();
-  //             sink.add(chunk);
-  //           },
-  //           onDone: () {
-  //             debugPrint("done downloading");
-  //             sink.close();
-  //           },
-  //           onError: (e) => throw e,
-  //         )
-  //         .asFuture()
-  //         .whenComplete(() {
-  //           debugPrint("Download completed");
-  //           downloadProgress.value = 0.0;
-  //           downloadProgress.refresh();
-  //         });
-  //
-  //     return file.path;
-  //   }
-  //   return null;
-  // }
-
-  Future<bool> _isStorageManagerPermissionGranted() async {
-    if (Platform.isAndroid) {
-      await Permission.storage.request();
-      // if (await DeviceInfoPlugin()
-      //     .androidInfo
-      //     .then((info) => info.version.sdkInt >= 30)) {
-      //   // return await Permission.manageExternalStorage.isGranted;
-      //    await Permission.storage.request();
-      // }
-      return await Permission.storage.isGranted;
-    }
-    return false;
   }
 
   shareVideo() async {
@@ -505,21 +426,11 @@ class HomeController extends GetxController {
           "https://www.youtube.com/watch?v=${selectedVideo.value!.videoId}";
       final Uri shareUri = Uri.parse(videoUrl);
       try {
-        // if (await canLaunchUrl(shareUri)) {
-        // await launchUrl(
         await SharePlus.instance.share(
           ShareParams(
-            // text: "Check out this video: ${selectedVideo.value!.title}",
             uri: shareUri,
-            // url: shareUri,
           ),
         );
-        //   shareUri,
-        //   mode: LaunchMode.externalApplication,
-        // );
-        // } else {
-        // debugPrint("Could not launch URL: $videoUrl");
-        // }
       } catch (e) {
         debugPrint("Error sharing video: ${e.toString()}");
       }
@@ -554,45 +465,9 @@ class HomeController extends GetxController {
         // Update your result
         result['mp3'] = audioStreams;
 
-        // await yt.videos.streamsClient
-        //     .getManifest(selectedVideo.value!.videoId)
-        //     .then(
-        //   (value) async {
-        //     debugPrint("Available streams fetched successfully");
-        //     //   result['mp3'] = value.audio
-        //     //       .where((s) =>
-        //     //           s.container == StreamContainer.webM ||
-        //     //           s.container == StreamContainer.m3u8)
-        //     //       .toList();
-        //     //   // Sort each category by quality
-        //     //   result['mp3']!.sort((a, b) => b.bitrate.compareTo(a.bitrate));
-        //     // } catch (e) {
-        //     //   debugPrint("Error fetching streams: ${e.toString()}");
-        //     // }
-        //   },
-        // );
-
-        //     .getManifest(selectedVideo.value!.videoId)
-        //     .then((value) async {
-        //   // Categorize all available streams
-        //   result.clear();
-        //   result['mp3'] = value.audio
-        //       .where((s) =>
-        //           s.container == StreamContainer.webM ||
-        //           s.container == StreamContainer.m3u8)
-        //       .toList();
-        //   // Sort each category by quality
-        //   result['mp3']!.sort((a, b) => b.bitrate.compareTo(a.bitrate));
-        //
-        //   // showDialog(
-        //   //   context: Get.context!,
-        //   //   builder: (context) => showDownloadsOptions(Get.context!, result),
-        //   // );
-        // });
       } catch (e) {
         debugPrint("Error fetching streams: ${e.toString()}");
         getAvailableFormats();
-        // showAvailableFormats();
       }
     }
   }

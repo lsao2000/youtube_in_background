@@ -4,7 +4,8 @@ import 'package:youtube_inbackground_newversion/src/core/styles/theme_colors.dar
 import 'package:youtube_inbackground_newversion/src/features/search/presentation/getx/search_controller.dart';
 
 class SearchPage extends SearchDelegate {
-  final SearchBarController searchBarController = Get.find();
+  final SearchBarController searchBarController =
+      Get.find<SearchBarController>();
 
   @override
   ThemeData appBarTheme(BuildContext context) {

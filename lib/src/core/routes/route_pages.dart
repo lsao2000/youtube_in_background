@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:youtube_inbackground_newversion/src/features/download/presentation/pages/download_page.dart';
 import 'package:youtube_inbackground_newversion/src/features/favorite/presentation/pages/favorite_page.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/presentation/pages/home_page.dart';
 import 'package:youtube_inbackground_newversion/src/shared/root_page/main_binding.dart';
@@ -10,6 +11,7 @@ class RoutePages {
     GetPage(name: '/', page: () => MainPage(), binding: MainBinding()),
     GetPage(name: '/home', page: () => HomePage()),
     GetPage(name: '/favorite', page: () => FavoritePage()),
+    GetPage(name: "/downloads", page: () => const DownloadPage()),
     // GetPage(name: "/search", page: () => const SearchPage())
   ];
 }

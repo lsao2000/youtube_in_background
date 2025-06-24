@@ -37,8 +37,8 @@ class MainController extends GetxController {
       if (value.isNotEmpty) {
         // sharedUrl = value.first.path;
         // debugPrint("Shred URL: ${value.first.path}");
-        currentTabIndex.value = 1; // Switch to favorite tab
-        currentTab.value = "/favorite";
+        currentTabIndex.value = 2; // Switch to favorite tab
+        currentTab.value = "/downloads"; // Navigate to downloads page
         update();
       }
     }, onError: (err) {
@@ -56,6 +56,10 @@ class MainController extends GetxController {
         break;
       case 1:
         currentTab.value = "/favorite";
+        update();
+        break;
+      case 2:
+        currentTab.value = "/downloads";
         update();
         break;
     }
