@@ -1,17 +1,19 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:youtube_inbackground_newversion/src/core/helper/image_helper.dart';
+import 'package:youtube_inbackground_newversion/src/features/download/presentation/getx/download_controller.dart';
+import 'package:youtube_inbackground_newversion/src/features/home/domain/models/downloaded_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/home_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/usecases/home_use_case.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/presentation/widgets/show_downloads_options.dart';
+import 'package:youtube_inbackground_newversion/src/features/search/search_dependency_injections.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
@@ -29,10 +31,12 @@ class HomeController extends GetxController {
   RxBool isVideoMinimized = false.obs;
   RxDouble dragHeight = 0.0.obs;
   RxDouble availableHeight = 0.0.obs;
+  // images of youtube channel that got from search
   RxList<String> youtubeChannelImage = <String>[].obs;
+
   RxBool wasMimizingView = false.obs;
-  RxBool isDownloading = false.obs;
-  RxDouble downloadProgress = 0.0.obs;
+  // RxBool isDownloading = false.obs;
+  // RxDouble downloadProgress = 0.0.obs;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
   // StreamSubscription? streamSubscription;
@@ -57,6 +61,7 @@ class HomeController extends GetxController {
   void onInit() async {
     super.onInit();
     await getAllFavorite();
+    initSearchDependy();
     setAppBarHeight();
     // _initSharingIntent();
   }
@@ -83,8 +88,10 @@ class HomeController extends GetxController {
     if (selectedVideo.value != null &&
         selectedVideo.value!.videoId == homeModel.videoId) {
     } else {
-      isDownloading.value = false;
-      downloadProgress.value = 0.0;
+      // Reset the state for a new videoId
+      var downloadController = Get.find<DownloadController>();
+      downloadController.isDownloading.value = false;
+      downloadController.downloadProgress.value = 0.0;
       dragHeight.value = availableHeight.value * 0.14;
       isVideoMinimized.value = true;
       youtubePlayerController.value.dispose();
@@ -247,7 +254,8 @@ class HomeController extends GetxController {
   // }
   //
   Future<String?> downloadAudio(int targetKbps) async {
-    downloadProgress.value = 0.0;
+    final downloadController = Get.find<DownloadController>();
+    downloadController.downloadProgress.value = 0.0;
     final hasPermission = await requestStoragePermission();
     if (!hasPermission) {
       ScaffoldMessenger.of(Get.context!).showSnackBar(
@@ -260,121 +268,180 @@ class HomeController extends GetxController {
       var yte = YoutubeExplode();
       final client = http.Client();
 
+      final video = await yte.videos.get(selectedVideo.value!.videoId);
+      final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      Directory directory;
+      if (Platform.isAndroid) {
+        directory = Directory('/storage/emulated/0/Music/');
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+      final file = File('${directory.path}/$cleanTitle.mp3');
+      StreamInfo? audioStream = null;
       try {
-        // Show initial notification
-        await _updateDownloadNotification(
-          notificationId: notificationId,
-          progress: 0,
-          filename: 'audio',
-          isComplete: false,
-        );
-
-        // Get video metadata
-        final video = await yte.videos.get(selectedVideo.value!.videoId);
-        final manifest = await yte.videos.streamsClient.getManifest(video.id);
-
-        final audioStream = manifest.audioOnly.fold(null,
-            (StreamInfo? closest, StreamInfo stream) {
-          final currentDiff =
-              (stream.bitrate.kiloBitsPerSecond - targetKbps).abs();
-          final closestDiff = closest != null
-              ? (closest.bitrate.kiloBitsPerSecond - targetKbps).abs()
-              : double.infinity;
-          return currentDiff < closestDiff ? stream : closest;
-        });
-
-        Directory directory;
-        if (Platform.isAndroid) {
-          directory = Directory('/storage/emulated/0/Music/');
-        } else {
-          directory = await getApplicationDocumentsDirectory();
-        }
-
-        final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-        final file = File('${directory.path}/$cleanTitle.mp3');
-
         // Track last progress to throttle updates
-        int lastProgress = 0;
+        if (file.existsSync()) {
+          ScaffoldMessenger.of(Get.context!).showSnackBar(
+            SnackBar(
+              content: Text('File already exists: ${file.path}'),
+            ),
+          );
+        } else {
+          // Show initial notification
+          await _updateDownloadNotification(
+            notificationId: notificationId,
+            progress: 0,
+            failed: false,
+            filename: 'audio',
+            isComplete: false,
+          );
 
-        // Download with progress
-        final request =
-            await client.send(http.Request('GET', audioStream!.url));
-        final contentLength = request.contentLength ?? 0;
-        int received = 0;
+          // Get video metadata
+          final manifest = await yte.videos.streamsClient.getManifest(video.id);
 
-        final sink = file.openWrite();
-        await request.stream.listen(
-          (List<int> chunk) async {
-            received += chunk.length;
-            final progress = ((received / contentLength) * 100).toInt();
+          audioStream = manifest.audioOnly.fold(null,
+              (StreamInfo? closest, StreamInfo stream) {
+            final currentDiff =
+                (stream.bitrate.kiloBitsPerSecond - targetKbps).abs();
+            final closestDiff = closest != null
+                ? (closest.bitrate.kiloBitsPerSecond - targetKbps).abs()
+                : double.infinity;
+            return currentDiff < closestDiff ? stream : closest;
+          });
 
-            // Update progress in UI
-            downloadProgress.value = progress.toDouble();
-            downloadProgress.refresh();
-            // if (progress - lastProgress >= 5 || progress == 100) {
-            //   debugPrint(
-            //     "Download progress: $progress%",
-            //   );
-            if (downloadProgress.value >= 100) {
-              debugPrint("Download progress: 100%");
-              lastProgress = progress;
+          int lastProgress = 0;
+          // Download with progress
+          final request =
+              await client.send(http.Request('GET', audioStream!.url));
+          final contentLength = request.contentLength ?? 0;
+          int received = 0;
+
+          final sink = file.openWrite();
+          await request.stream.listen(
+            (List<int> chunk) async {
+              received += chunk.length;
+              final progress = ((received / contentLength) * 100).toInt();
+
+              sink.add(chunk);
+              downloadController.downloadProgress.value = progress.toDouble();
+              downloadController.downloadProgress.refresh();
+              if (downloadController.downloadProgress.value >= 100) {
+                lastProgress = progress;
+                // Update progress in UI
+                homeUseCase.addDownloadedVideo(
+                  downloadedVideoModel: DownloadedVideoModel(
+                    videoId: video.id.value,
+                    title: video.title,
+                    progress: downloadController.downloadProgress.value,
+                    // thumbnailUrl: video.thumbnails.highResUrl,
+                    thumbnailUrl: ImageHelper().getDefaultImageUrl(
+                        imgUrl: selectedVideo.value!.videoId),
+                    videoUrl: audioStream!.url.toString(),
+                    duration:
+                        video.duration?.inSeconds ?? Duration.zero.inSeconds,
+                    downloadDate: DateTime.now(),
+                  ),
+                );
+                await _updateDownloadNotification(
+                  notificationId: notificationId,
+                  progress: downloadController.downloadProgress.value.toInt(),
+                  failed: false,
+                  filename: cleanTitle,
+                  isComplete: true,
+                );
+              } else {
+                lastProgress = progress;
+                // Update progress in UI
+                // downloadController.downloadProgress.value = progress.toDouble();
+                // downloadController.downloadProgress.refresh();
+                await _updateDownloadNotification(
+                  notificationId: notificationId,
+                  failed: false,
+                  progress: progress,
+                  filename: cleanTitle,
+                  isComplete: false,
+                );
+              }
+            },
+            // ✔️
+            onDone: () async {
+              await sink.close();
+              debugPrint("Download completed");
+
+              // Update notification to complete
               await _updateDownloadNotification(
                 notificationId: notificationId,
-                progress: progress,
+                progress: 100,
+                failed: false,
                 filename: cleanTitle,
                 isComplete: true,
               );
-              downloadProgress.refresh();
-            } else {
-              lastProgress = progress;
-              await _updateDownloadNotification(
-                notificationId: notificationId,
-                progress: progress,
-                filename: cleanTitle,
-                isComplete: false,
-              );
-            }
+            },
+            onError: (e) async {
+              await sink.close();
+              debugPrint("Download error: $e");
 
-            sink.add(chunk);
-          },
-          // @s'@s\@s;@s/@s,
-          // ✔️
-          onDone: () async {
-            await sink.close();
-            debugPrint("Download completed");
-
-            // Update notification to complete
-            await _updateDownloadNotification(
-              notificationId: notificationId,
-              progress: 100,
-              filename: cleanTitle,
-              isComplete: true,
-            );
-          },
-          onError: (e) async {
-            await sink.close();
-            debugPrint("Download error: $e");
-
-            // Show error notification
-            await flutterLocalNotificationsPlugin.show(
-              notificationId,
-              'Download failed',
-              'Failed to download audio',
-              const NotificationDetails(
-                android: AndroidNotificationDetails(
-                  'download_channel',
-                  'Downloads',
-                  importance: Importance.high,
-                  // icon: 'ic_notification',
+              // Show error notification
+              await flutterLocalNotificationsPlugin.show(
+                notificationId,
+                'Download failed',
+                'Failed to download audio',
+                const NotificationDetails(
+                  android: AndroidNotificationDetails(
+                    'download_channel',
+                    'Downloads',
+                    importance: Importance.high,
+                  ),
                 ),
-              ),
-            );
-
-            throw e;
-          },
-        ).asFuture();
+              );
+              throw e;
+            },
+          ).asFuture();
+          sink.flush();
+          sink.close();
+        }
+        // downloadController.isDownloading.value = false;
+        downloadController.downloadProgress.value = 100.0;
+        downloadController.update();
+        debugPrint("Download completed successfully");
+        // Show success notification
+        // homeUseCase.addDownloadedVideo();
+        homeUseCase.addDownloadedVideo(
+          downloadedVideoModel: DownloadedVideoModel(
+            videoId: video.id.value,
+            title: video.title,
+            progress: downloadController.downloadProgress.value,
+            thumbnailUrl: video.thumbnails.highResUrl,
+            videoUrl: audioStream!.url.toString(),
+            duration: video.duration?.inSeconds ?? Duration.zero.inSeconds,
+            downloadDate: DateTime.now(),
+          ),
+        );
 
         return file.path;
+      } catch (e) {
+        downloadController.downloadProgress.value = 0.0;
+        downloadController.isDownloading.value = false;
+        downloadController.update();
+        file.deleteSync();
+        await _updateDownloadNotification(
+            notificationId: notificationId,
+            progress: downloadController.downloadProgress.value.toInt(),
+            filename: cleanTitle,
+            failed: true,
+            isComplete: true);
+        homeUseCase.addDownloadedVideo(
+          downloadedVideoModel: DownloadedVideoModel(
+            videoId: video.id.value,
+            title: video.title,
+            progress: downloadController.downloadProgress.value,
+            thumbnailUrl: video.thumbnails.highResUrl,
+            videoUrl: audioStream!.url.toString(),
+            duration: video.duration?.inSeconds ?? Duration.zero.inSeconds,
+            downloadDate: DateTime.now(),
+          ),
+        );
+        return null;
       } finally {
         client.close();
         yte.close();
@@ -387,6 +454,7 @@ class HomeController extends GetxController {
     required int progress,
     required String filename,
     required bool isComplete,
+    required bool failed,
   }) async {
     final androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'download_channel',
@@ -409,9 +477,15 @@ class HomeController extends GetxController {
     await flutterLocalNotificationsPlugin.show(
       notificationId,
       isComplete
-          ? 'Download complete'
+          ? failed
+              ? 'Failed to download ${filename.substring(0, min(20, filename.length))}'
+              : 'Download complete'
           : 'Downloading ${filename.substring(0, min(20, filename.length))}...',
-      isComplete ? ' ✔️ Audio downloaded successfully' : '$progress% complete',
+      isComplete
+          ? failed
+              ? '❌ Download failed, please try again'
+              : ' ✔️ Audio downloaded successfully'
+          : '$progress% complete',
       platformChannelSpecifics,
     );
   }
@@ -464,7 +538,6 @@ class HomeController extends GetxController {
 
         // Update your result
         result['mp3'] = audioStreams;
-
       } catch (e) {
         debugPrint("Error fetching streams: ${e.toString()}");
         getAvailableFormats();
@@ -482,6 +555,7 @@ class HomeController extends GetxController {
   void showNotificationDownloadProgress() {
     // Implement your notification logic here
     // For example, using a package like flutter_local_notifications
+    final downloadController = Get.find<DownloadController>();
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'download_channel',
       'Download Progress',
@@ -489,14 +563,14 @@ class HomeController extends GetxController {
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,
-      progress: downloadProgress.value.toInt(),
+      progress: downloadController.downloadProgress.value.toInt(),
       maxProgress: 100,
     );
     var iOSPlatformChannelSpecifics = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      badgeNumber: downloadProgress.value.toInt(),
+      badgeNumber: downloadController.downloadProgress.value.toInt(),
       subtitle: 'Downloading video',
     );
     FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -529,7 +603,7 @@ class HomeController extends GetxController {
     flutterLocalNotificationsPlugin.show(
       0,
       '${selectedVideo.value?.title}',
-      'Download progress: ${downloadProgress.value.toStringAsFixed(1)}%',
+      'Download progress: ${downloadController.downloadProgress.value.toStringAsFixed(1)}%',
       platformChannelSpecifics,
       payload: 'video_download',
     );

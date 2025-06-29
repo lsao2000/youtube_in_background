@@ -18,25 +18,32 @@ class MainController extends GetxController {
   }
 
   void _initSharingIntent() {
+    // This method initializes the sharing intent to handle incoming shared media
     ReceiveSharingIntent.instance
         .getInitialMedia()
         .then((List<SharedMediaFile> value) {
+      debugPrint("Received shared media: $value");
       if (value.isNotEmpty) {
         // sharedUrl = value.first.path;
-        // debugPrint("Shared URL: ${value.first.path}");
         ScaffoldMessenger.of(Get.context!).showSnackBar(
           SnackBar(
             content: Text("Shared URL: ${value.first.path}"),
             duration: const Duration(seconds: 3),
           ),
         );
+        currentTabIndex.value = 2; // Switch to favorite tab
+        currentTab.value = "/downloads"; // Navigate to downloads page
+        update();
       }
     });
+
+    // Listen for incoming shared media files
+    // This will handle media shared while the app is in the background or foreground
     ReceiveSharingIntent.instance.getMediaStream().listen(
         (List<SharedMediaFile> value) {
+      debugPrint("Received shared media: $value");
       if (value.isNotEmpty) {
-        // sharedUrl = value.first.path;
-        // debugPrint("Shred URL: ${value.first.path}");
+        Get.back(); // Go back to the previous page
         currentTabIndex.value = 2; // Switch to favorite tab
         currentTab.value = "/downloads"; // Navigate to downloads page
         update();

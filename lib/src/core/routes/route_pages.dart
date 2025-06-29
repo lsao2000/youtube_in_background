@@ -11,7 +11,7 @@ class RoutePages {
     GetPage(name: '/', page: () => MainPage(), binding: MainBinding()),
     GetPage(name: '/home', page: () => HomePage()),
     GetPage(name: '/favorite', page: () => FavoritePage()),
-    GetPage(name: "/downloads", page: () => const DownloadPage()),
+    GetPage(name: "/downloads", page: () =>  DownloadPage()),
     // GetPage(name: "/search", page: () => const SearchPage())
   ];
 }

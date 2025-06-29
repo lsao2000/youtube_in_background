@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:youtube_inbackground_newversion/src/features/download/presentation/getx/download_controller.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/presentation/getx/home_controller.dart';
 
 Widget showDownloadsOptions(
@@ -28,7 +29,6 @@ Widget showDownloadsOptions(
           return ExpansionTile(
             title: Text(key),
             children: streams.map((stream) {
-
               return ListTile(
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
@@ -45,11 +45,12 @@ Widget showDownloadsOptions(
                 onTap: () {
                   // Handle download action
                   var homeController = Get.find<HomeController>();
+                  var downloadController = Get.find<DownloadController>();
                   homeController.downloadAudio(
                     stream.bitrate.kiloBitsPerSecond ~/ 10 * 10,
                   );
-                  homeController.isDownloading.value = true;
-                  homeController.isDownloading.refresh();
+                  downloadController.isDownloading.value = true;
+                  downloadController.isDownloading.refresh();
                   Get.back();
                 },
               );

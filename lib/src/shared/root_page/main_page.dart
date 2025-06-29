@@ -14,7 +14,7 @@ class MainPage extends GetView<MainController> {
   final pages = [
     HomePage(),
     FavoritePage(),
-    const DownloadPage(),
+    DownloadPage(),
   ];
   @override
   Widget build(BuildContext context) {

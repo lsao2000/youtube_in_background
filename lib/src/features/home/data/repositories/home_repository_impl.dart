@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/data/data_source/localDb/home_local_db.dart';
-import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
+import 'package:youtube_inbackground_newversion/src/features/home/domain/models/downloaded_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/repository/home_repository.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
@@ -35,6 +36,18 @@ class HomeRepositoryImpl implements HomeRepository {
       return {"success": true, "msg": "success to delete favorite"};
     } on DatabaseException catch (e) {
       return {"success": true, "msg": e.toString()};
+    }
+  }
+
+  @override
+  Future<void> addDownloadedVideo(
+      {required DownloadedVideoModel downloadedVideoModel}) async {
+    try {
+      homeLocalDb.addDownloadedVideo(
+        downloadedVideoModel: downloadedVideoModel,
+      );
+    } catch (e) {
+      debugPrint('Error adding downloaded video: ${e.toString()}');
     }
   }
 }

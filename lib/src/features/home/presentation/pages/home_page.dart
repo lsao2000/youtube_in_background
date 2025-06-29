@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:youtube_inbackground_newversion/src/core/styles/theme_colors.dart';
+import 'package:youtube_inbackground_newversion/src/features/download/presentation/getx/download_controller.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/home_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/presentation/getx/home_controller.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/presentation/widgets/video_image.dart';
@@ -10,6 +11,7 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 class HomePage extends StatelessWidget {
   HomePage({super.key});
   final controller = Get.find<HomeController>();
+  final downloadController = Get.find<DownloadController>();
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +150,7 @@ class HomePage extends StatelessWidget {
                                       ),
                                       IconButton(
                                           onPressed: () {
-                                              controller.resetAll();
+                                            controller.resetAll();
                                           },
                                           icon: const Icon(Icons.close))
                                     ],
@@ -310,7 +312,8 @@ class HomePage extends StatelessWidget {
                                       onPressed: () {
                                         controller.showAvailableFormats();
                                       },
-                                      icon: controller.isDownloading.value
+                                      icon: downloadController
+                                              .isDownloading.value
                                           ? Stack(
                                               alignment: Alignment.center,
                                               children: [
@@ -321,13 +324,14 @@ class HomePage extends StatelessWidget {
                                                       CircularProgressIndicator(
                                                     strokeWidth: 2,
                                                     color: deepOrange,
-                                                    value: controller
+                                                    value: downloadController
                                                             .downloadProgress
                                                             .value /
                                                         100,
                                                   ),
                                                 ),
-                                                controller.downloadProgress
+                                                downloadController
+                                                            .downloadProgress
                                                             .value ==
                                                         100
                                                     ? Icon(

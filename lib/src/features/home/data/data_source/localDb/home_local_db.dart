@@ -2,15 +2,29 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:youtube_inbackground_newversion/src/features/home/domain/models/downloaded_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
 
 class HomeLocalDb {
   Database? _database;
   static const favoriteTableName = "favorite_history";
+  static const downloadedTableName = "downloaded_videos";
   static const favoriteTable = """
     CREATE TABLE IF NOT EXISTS $favoriteTableName (
       favorite_id INTEGER PRIMARY KEY AUTOINCREMENT,
       video_id TEXT NOT NULL UNIQUE
+    )
+  """;
+  static const downloadTable = """
+    CREATE TABLE IF NOT EXISTS downloaded_videos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      video_id TEXT NOT NULL UNIQUE,
+      title TEXT,
+      thumbnail_url TEXT,
+      video_url TEXT,
+      duration INTEGER,
+      download_date TEXT,
+      progress REAL DEFAULT 0.0
     )
   """;
 
@@ -63,6 +77,34 @@ class HomeLocalDb {
     } catch (e) {
       await db.execute(favoriteTable);
       debugPrint('Created missing $favoriteTableName table');
+    }
+  }
+
+  Future<void> ensureDownloadedTableExists() async {
+    final db = await database;
+    try {
+      await db.rawQuery('SELECT 1 FROM downloaded_videos LIMIT 1');
+    } catch (e) {
+      await db.execute(downloadTable);
+      debugPrint('Created missing downloaded_videos table');
+    }
+  }
+
+  Future<void> addDownloadedVideo(
+      {required DownloadedVideoModel downloadedVideoModel}) async {
+    final db = await database;
+    await ensureDownloadedTableExists(); // Ensure table exists before operation
+
+    try {
+      await db.insert(
+        'downloaded_videos',
+        downloadedVideoModel.toJson(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      debugPrint('Downloaded video added successfully');
+    } catch (e) {
+      debugPrint('Error adding downloaded video: ${e.toString()}');
+      rethrow;
     }
   }
 
@@ -122,4 +164,6 @@ class HomeLocalDb {
       _database = null;
     }
   }
+
+  Future<void> addDownloadedFile(String fileName) async {}
 }

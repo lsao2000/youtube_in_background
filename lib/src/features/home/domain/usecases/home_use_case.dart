@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:youtube_inbackground_newversion/src/features/home/domain/models/downloaded_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/repository/home_repository.dart';
 
@@ -34,5 +35,12 @@ class HomeUseCase {
     }
     debugPrint(body["msg"]);
     return body["data"];
+  }
+
+  Future<void> addDownloadedVideo(
+      {required DownloadedVideoModel downloadedVideoModel}) async {
+    homeRepository.addDownloadedVideo(
+      downloadedVideoModel: downloadedVideoModel,
+    );
   }
 }
