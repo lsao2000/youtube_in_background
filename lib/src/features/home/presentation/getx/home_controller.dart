@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
-import 'package:youtube_inbackground_newversion/src/core/helper/image_helper.dart';
+import 'package:youtube_inbackground_newversion/src/core/service/media_downloader.dart';
 import 'package:youtube_inbackground_newversion/src/features/download/presentation/getx/download_controller.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/downloaded_model.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/favorite_model.dart';
@@ -63,12 +63,12 @@ class HomeController extends GetxController {
     await getAllFavorite();
     initSearchDependy();
     setAppBarHeight();
-    // _initSharingIntent();
   }
 
   setAppBarHeight() {
     RxDouble appBarHeight = AppBar().preferredSize.height.obs;
     RxDouble totalHeight = Get.height.obs;
+
     RxDouble bottomNavBarHeight =
         kBottomNavigationBarHeight.obs; // Standard height (56.0)
     RxDouble statusBarHeight = MediaQuery.of(Get.context!).padding.top.obs;
@@ -141,6 +141,7 @@ class HomeController extends GetxController {
           video.isFavorite = isFavorite;
         }
         lstVideos.refresh();
+        // get all channel images
         Future.delayed(const Duration(milliseconds: 400))
             .whenComplete(() async {
           for (var vid in lstSearch) {
@@ -164,6 +165,7 @@ class HomeController extends GetxController {
   }
 
   Future addAndRemoveFavorite({required String videoId}) async {
+    // Check if the video is already in the favorites list
     final index = lstVideos.indexWhere((e) => e.videoId == videoId);
     if (!lstVideos.value[index].isFavorite) {
       var dataExecution = await homeUseCase.addToFavorite(videoId: videoId);
@@ -195,6 +197,7 @@ class HomeController extends GetxController {
     }
   }
 
+// Custom text for views
   String customViewsText(int views) {
     if (views < 1000) {
       return "$views ";
@@ -254,8 +257,8 @@ class HomeController extends GetxController {
   // }
   //
   Future<String?> downloadAudio(int targetKbps) async {
-    final downloadController = Get.find<DownloadController>();
-    downloadController.downloadProgress.value = 0.0;
+    // final downloadController = Get.find<DownloadController>();
+    // downloadController.downloadProgress.value = 0.0;
     final hasPermission = await requestStoragePermission();
     if (!hasPermission) {
       ScaffoldMessenger.of(Get.context!).showSnackBar(
@@ -263,7 +266,7 @@ class HomeController extends GetxController {
       return null;
     } else {
       // Create unique notification ID
-      final notificationId = DateTime.now().millisecondsSinceEpoch % 100000;
+      // final notificationId = DateTime.now().millisecondsSinceEpoch % 100000;
 
       var yte = YoutubeExplode();
       final client = http.Client();
@@ -287,15 +290,6 @@ class HomeController extends GetxController {
             ),
           );
         } else {
-          // Show initial notification
-          await _updateDownloadNotification(
-            notificationId: notificationId,
-            progress: 0,
-            failed: false,
-            filename: 'audio',
-            isComplete: false,
-          );
-
           // Get video metadata
           final manifest = await yte.videos.streamsClient.getManifest(video.id);
 
@@ -309,138 +303,152 @@ class HomeController extends GetxController {
             return currentDiff < closestDiff ? stream : closest;
           });
 
-          int lastProgress = 0;
+          MediaDownloader mediaDownloader = MediaDownloader();
+          mediaDownloader.download(
+              url: audioStream!.url.toString(),
+              path: file.path,
+              title: cleanTitle);
+          // Show initial notification
+          // await _updateDownloadNotification(
+          //   notificationId: notificationId,
+          //   progress: 0,
+          //   failed: false,
+          //   filename: 'audio',
+          //   isComplete: false,
+          // );
+
+          // int lastProgress = 0;
           // Download with progress
-          final request =
-              await client.send(http.Request('GET', audioStream!.url));
-          final contentLength = request.contentLength ?? 0;
-          int received = 0;
+          // final request =
+          //     await client.send(http.Request('GET', audioStream!.url));
+          // final contentLength = request.contentLength ?? 0;
+          // int received = 0;
 
-          final sink = file.openWrite();
-          await request.stream.listen(
-            (List<int> chunk) async {
-              received += chunk.length;
-              final progress = ((received / contentLength) * 100).toInt();
-
-              sink.add(chunk);
-              downloadController.downloadProgress.value = progress.toDouble();
-              downloadController.downloadProgress.refresh();
-              if (downloadController.downloadProgress.value >= 100) {
-                lastProgress = progress;
-                // Update progress in UI
-                homeUseCase.addDownloadedVideo(
-                  downloadedVideoModel: DownloadedVideoModel(
-                    videoId: video.id.value,
-                    title: video.title,
-                    progress: downloadController.downloadProgress.value,
-                    // thumbnailUrl: video.thumbnails.highResUrl,
-                    thumbnailUrl: ImageHelper().getDefaultImageUrl(
-                        imgUrl: selectedVideo.value!.videoId),
-                    videoUrl: audioStream!.url.toString(),
-                    duration:
-                        video.duration?.inSeconds ?? Duration.zero.inSeconds,
-                    downloadDate: DateTime.now(),
-                  ),
-                );
-                await _updateDownloadNotification(
-                  notificationId: notificationId,
-                  progress: downloadController.downloadProgress.value.toInt(),
-                  failed: false,
-                  filename: cleanTitle,
-                  isComplete: true,
-                );
-              } else {
-                lastProgress = progress;
-                // Update progress in UI
-                // downloadController.downloadProgress.value = progress.toDouble();
-                // downloadController.downloadProgress.refresh();
-                await _updateDownloadNotification(
-                  notificationId: notificationId,
-                  failed: false,
-                  progress: progress,
-                  filename: cleanTitle,
-                  isComplete: false,
-                );
-              }
-            },
-            // ✔️
-            onDone: () async {
-              await sink.close();
-              debugPrint("Download completed");
-
-              // Update notification to complete
-              await _updateDownloadNotification(
-                notificationId: notificationId,
-                progress: 100,
-                failed: false,
-                filename: cleanTitle,
-                isComplete: true,
-              );
-            },
-            onError: (e) async {
-              await sink.close();
-              debugPrint("Download error: $e");
-
-              // Show error notification
-              await flutterLocalNotificationsPlugin.show(
-                notificationId,
-                'Download failed',
-                'Failed to download audio',
-                const NotificationDetails(
-                  android: AndroidNotificationDetails(
-                    'download_channel',
-                    'Downloads',
-                    importance: Importance.high,
-                  ),
-                ),
-              );
-              throw e;
-            },
-          ).asFuture();
-          sink.flush();
-          sink.close();
+          // final sink = file.openWrite();
+          // await request.stream.listen(
+          //   (List<int> chunk) async {
+          //     received += chunk.length;
+          //     final progress = ((received / contentLength) * 100).toInt();
+          //
+          //     sink.add(chunk);
+          //     downloadController.downloadProgress.value = progress.toDouble();
+          //     downloadController.downloadProgress.refresh();
+          //     if (downloadController.downloadProgress.value >= 100) {
+          //       lastProgress = progress;
+          //       // Update progress in UI
+          //       homeUseCase.addDownloadedVideo(
+          //         downloadedVideoModel: DownloadedVideoModel(
+          //           videoId: video.id.value,
+          //           title: video.title,
+          //           progress: downloadController.downloadProgress.value,
+          //           // thumbnailUrl: video.thumbnails.highResUrl,
+          //           thumbnailUrl: ImageHelper().getDefaultImageUrl(
+          //               imgUrl: selectedVideo.value!.videoId),
+          //           videoUrl: audioStream!.url.toString(),
+          //           duration:
+          //               video.duration?.inSeconds ?? Duration.zero.inSeconds,
+          //           downloadDate: DateTime.now(),
+          //         ),
+          //       );
+          //       await _updateDownloadNotification(
+          //         notificationId: notificationId,
+          //         progress: downloadController.downloadProgress.value.toInt(),
+          //         failed: false,
+          //         filename: cleanTitle,
+          //         isComplete: true,
+          //       );
+          //     } else {
+          //       lastProgress = progress;
+          //       // Update progress in UI
+          //       // downloadController.downloadProgress.value = progress.toDouble();
+          //       // downloadController.downloadProgress.refresh();
+          //       await _updateDownloadNotification(
+          //         notificationId: notificationId,
+          //         failed: false,
+          //         progress: progress,
+          //         filename: cleanTitle,
+          //         isComplete: false,
+          //       );
+          //     }
+          //   },
+          //   // ✔️
+          //   onDone: () async {
+          //     await sink.close();
+          //     debugPrint("Download completed");
+          //
+          //     // Update notification to complete
+          //     await _updateDownloadNotification(
+          //       notificationId: notificationId,
+          //       progress: 100,
+          //       failed: false,
+          //       filename: cleanTitle,
+          //       isComplete: true,
+          //     );
+          //   },
+          //   onError: (e) async {
+          //     await sink.close();
+          //     debugPrint("Download error: $e");
+          //
+          //     // Show error notification
+          //     await flutterLocalNotificationsPlugin.show(
+          //       notificationId,
+          //       'Download failed',
+          //       'Failed to download audio',
+          //       const NotificationDetails(
+          //         android: AndroidNotificationDetails(
+          //           'download_channel',
+          //           'Downloads',
+          //           importance: Importance.high,
+          //         ),
+          //       ),
+          //     );
+          //     throw e;
+          //   },
+          // ).asFuture();
+          // sink.flush();
+          // sink.close();
         }
         // downloadController.isDownloading.value = false;
-        downloadController.downloadProgress.value = 100.0;
-        downloadController.update();
+        // downloadController.downloadProgress.value = 100.0;
+        // downloadController.update();
         debugPrint("Download completed successfully");
         // Show success notification
         // homeUseCase.addDownloadedVideo();
-        homeUseCase.addDownloadedVideo(
-          downloadedVideoModel: DownloadedVideoModel(
-            videoId: video.id.value,
-            title: video.title,
-            progress: downloadController.downloadProgress.value,
-            thumbnailUrl: video.thumbnails.highResUrl,
-            videoUrl: audioStream!.url.toString(),
-            duration: video.duration?.inSeconds ?? Duration.zero.inSeconds,
-            downloadDate: DateTime.now(),
-          ),
-        );
+        // homeUseCase.addDownloadedVideo(
+        //   downloadedVideoModel: DownloadedVideoModel(
+        //     videoId: video.id.value,
+        //     title: video.title,
+        //     progress: downloadController.downloadProgress.value,
+        //     thumbnailUrl: video.thumbnails.highResUrl,
+        //     videoUrl: audioStream!.url.toString(),
+        //     duration: video.duration?.inSeconds ?? Duration.zero.inSeconds,
+        //     downloadDate: DateTime.now(),
+        //   ),
+        // );
 
         return file.path;
       } catch (e) {
-        downloadController.downloadProgress.value = 0.0;
-        downloadController.isDownloading.value = false;
-        downloadController.update();
-        file.deleteSync();
-        await _updateDownloadNotification(
-            notificationId: notificationId,
-            progress: downloadController.downloadProgress.value.toInt(),
-            filename: cleanTitle,
-            failed: true,
-            isComplete: true);
-        homeUseCase.addDownloadedVideo(
-          downloadedVideoModel: DownloadedVideoModel(
-            videoId: video.id.value,
-            title: video.title,
-            progress: downloadController.downloadProgress.value,
-            thumbnailUrl: video.thumbnails.highResUrl,
-            videoUrl: audioStream!.url.toString(),
-            duration: video.duration?.inSeconds ?? Duration.zero.inSeconds,
-            downloadDate: DateTime.now(),
-          ),
-        );
+        // downloadController.downloadProgress.value = 0.0;
+        // downloadController.isDownloading.value = false;
+        // downloadController.update();
+        // file.deleteSync();
+        // await _updateDownloadNotification(
+        //     notificationId: notificationId,
+        //     progress: downloadController.downloadProgress.value.toInt(),
+        //     filename: cleanTitle,
+        //     failed: true,
+        //     isComplete: true);
+        // homeUseCase.addDownloadedVideo(
+        //   downloadedVideoModel: DownloadedVideoModel(
+        //     videoId: video.id.value,
+        //     title: video.title,
+        //     progress: downloadController.downloadProgress.value,
+        //     thumbnailUrl: video.thumbnails.highResUrl,
+        //     videoUrl: audioStream!.url.toString(),
+        //     duration: video.duration?.inSeconds ?? Duration.zero.inSeconds,
+        //     downloadDate: DateTime.now(),
+        //   ),
+        // );
         return null;
       } finally {
         client.close();
