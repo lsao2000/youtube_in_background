@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:youtube_inbackground_newversion/src/core/helper/image_helper.dart';
 import 'package:youtube_inbackground_newversion/src/core/service/media_downloader.dart';
 import 'package:youtube_inbackground_newversion/src/features/download/presentation/getx/download_controller.dart';
 import 'package:youtube_inbackground_newversion/src/features/home/domain/models/downloaded_model.dart';
@@ -256,31 +257,35 @@ class HomeController extends GetxController {
   //   // final appDocDir = await getApplicationDocumentsDirectory();
   // }
   //
+  Future<Directory> getAudioDownloadsDirectory() async {
+    Directory downloadsDir;
+    if (Platform.isAndroid) {
+      downloadsDir = Directory('/storage/emulated/0/Music/Backtube');
+      // Directory('/storage/emulated/0/Music/');
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
+      }
+    } else {
+      downloadsDir = await getApplicationDocumentsDirectory();
+    }
+    return downloadsDir;
+  }
+
   Future<String?> downloadAudio(int targetKbps) async {
-    // final downloadController = Get.find<DownloadController>();
-    // downloadController.downloadProgress.value = 0.0;
     final hasPermission = await requestStoragePermission();
     if (!hasPermission) {
       ScaffoldMessenger.of(Get.context!).showSnackBar(
           const SnackBar(content: Text('Storage permission denied')));
       return null;
     } else {
-      // Create unique notification ID
-      // final notificationId = DateTime.now().millisecondsSinceEpoch % 100000;
-
       var yte = YoutubeExplode();
       final client = http.Client();
 
       final video = await yte.videos.get(selectedVideo.value!.videoId);
       final cleanTitle = video.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-      Directory directory;
-      if (Platform.isAndroid) {
-        directory = Directory('/storage/emulated/0/Music/');
-      } else {
-        directory = await getApplicationDocumentsDirectory();
-      }
+      Directory directory = await getAudioDownloadsDirectory();
       final file = File('${directory.path}/$cleanTitle.mp3');
-      StreamInfo? audioStream = null;
+      StreamInfo? audioStream;
       try {
         // Track last progress to throttle updates
         if (file.existsSync()) {
@@ -304,151 +309,28 @@ class HomeController extends GetxController {
           });
 
           MediaDownloader mediaDownloader = MediaDownloader();
-          mediaDownloader.download(
+          await mediaDownloader.download(
               url: audioStream!.url.toString(),
               path: file.path,
               title: cleanTitle);
-          // Show initial notification
-          // await _updateDownloadNotification(
-          //   notificationId: notificationId,
-          //   progress: 0,
-          //   failed: false,
-          //   filename: 'audio',
-          //   isComplete: false,
-          // );
-
-          // int lastProgress = 0;
-          // Download with progress
-          // final request =
-          //     await client.send(http.Request('GET', audioStream!.url));
-          // final contentLength = request.contentLength ?? 0;
-          // int received = 0;
-
-          // final sink = file.openWrite();
-          // await request.stream.listen(
-          //   (List<int> chunk) async {
-          //     received += chunk.length;
-          //     final progress = ((received / contentLength) * 100).toInt();
-          //
-          //     sink.add(chunk);
-          //     downloadController.downloadProgress.value = progress.toDouble();
-          //     downloadController.downloadProgress.refresh();
-          //     if (downloadController.downloadProgress.value >= 100) {
-          //       lastProgress = progress;
-          //       // Update progress in UI
-          //       homeUseCase.addDownloadedVideo(
-          //         downloadedVideoModel: DownloadedVideoModel(
-          //           videoId: video.id.value,
-          //           title: video.title,
-          //           progress: downloadController.downloadProgress.value,
-          //           // thumbnailUrl: video.thumbnails.highResUrl,
-          //           thumbnailUrl: ImageHelper().getDefaultImageUrl(
-          //               imgUrl: selectedVideo.value!.videoId),
-          //           videoUrl: audioStream!.url.toString(),
-          //           duration:
-          //               video.duration?.inSeconds ?? Duration.zero.inSeconds,
-          //           downloadDate: DateTime.now(),
-          //         ),
-          //       );
-          //       await _updateDownloadNotification(
-          //         notificationId: notificationId,
-          //         progress: downloadController.downloadProgress.value.toInt(),
-          //         failed: false,
-          //         filename: cleanTitle,
-          //         isComplete: true,
-          //       );
-          //     } else {
-          //       lastProgress = progress;
-          //       // Update progress in UI
-          //       // downloadController.downloadProgress.value = progress.toDouble();
-          //       // downloadController.downloadProgress.refresh();
-          //       await _updateDownloadNotification(
-          //         notificationId: notificationId,
-          //         failed: false,
-          //         progress: progress,
-          //         filename: cleanTitle,
-          //         isComplete: false,
-          //       );
-          //     }
-          //   },
-          //   // ✔️
-          //   onDone: () async {
-          //     await sink.close();
-          //     debugPrint("Download completed");
-          //
-          //     // Update notification to complete
-          //     await _updateDownloadNotification(
-          //       notificationId: notificationId,
-          //       progress: 100,
-          //       failed: false,
-          //       filename: cleanTitle,
-          //       isComplete: true,
-          //     );
-          //   },
-          //   onError: (e) async {
-          //     await sink.close();
-          //     debugPrint("Download error: $e");
-          //
-          //     // Show error notification
-          //     await flutterLocalNotificationsPlugin.show(
-          //       notificationId,
-          //       'Download failed',
-          //       'Failed to download audio',
-          //       const NotificationDetails(
-          //         android: AndroidNotificationDetails(
-          //           'download_channel',
-          //           'Downloads',
-          //           importance: Importance.high,
-          //         ),
-          //       ),
-          //     );
-          //     throw e;
-          //   },
-          // ).asFuture();
-          // sink.flush();
-          // sink.close();
+          final DownloadController downloadController =
+              Get.find<DownloadController>();
+          homeUseCase.addDownloadedVideo(
+            downloadedVideoModel: DownloadedVideoModel(
+              videoId: video.id.value,
+              title: video.title,
+              progress: downloadController.downloadProgress.value,
+              thumbnailUrl: ImageHelper()
+                  .getDefaultImageUrl(imgUrl: selectedVideo.value!.videoId),
+              videoUrl: audioStream.url.toString(),
+              duration: video.duration?.inSeconds ?? Duration.zero.inSeconds,
+              downloadDate: DateTime.now(),
+            ),
+          );
+          downloadController.downloadedVideos.refresh();
         }
-        // downloadController.isDownloading.value = false;
-        // downloadController.downloadProgress.value = 100.0;
-        // downloadController.update();
-        debugPrint("Download completed successfully");
-        // Show success notification
-        // homeUseCase.addDownloadedVideo();
-        // homeUseCase.addDownloadedVideo(
-        //   downloadedVideoModel: DownloadedVideoModel(
-        //     videoId: video.id.value,
-        //     title: video.title,
-        //     progress: downloadController.downloadProgress.value,
-        //     thumbnailUrl: video.thumbnails.highResUrl,
-        //     videoUrl: audioStream!.url.toString(),
-        //     duration: video.duration?.inSeconds ?? Duration.zero.inSeconds,
-        //     downloadDate: DateTime.now(),
-        //   ),
-        // );
-
         return file.path;
       } catch (e) {
-        // downloadController.downloadProgress.value = 0.0;
-        // downloadController.isDownloading.value = false;
-        // downloadController.update();
-        // file.deleteSync();
-        // await _updateDownloadNotification(
-        //     notificationId: notificationId,
-        //     progress: downloadController.downloadProgress.value.toInt(),
-        //     filename: cleanTitle,
-        //     failed: true,
-        //     isComplete: true);
-        // homeUseCase.addDownloadedVideo(
-        //   downloadedVideoModel: DownloadedVideoModel(
-        //     videoId: video.id.value,
-        //     title: video.title,
-        //     progress: downloadController.downloadProgress.value,
-        //     thumbnailUrl: video.thumbnails.highResUrl,
-        //     videoUrl: audioStream!.url.toString(),
-        //     duration: video.duration?.inSeconds ?? Duration.zero.inSeconds,
-        //     downloadDate: DateTime.now(),
-        //   ),
-        // );
         return null;
       } finally {
         client.close();
@@ -560,63 +442,63 @@ class HomeController extends GetxController {
     );
   }
 
-  void showNotificationDownloadProgress() {
-    // Implement your notification logic here
-    // For example, using a package like flutter_local_notifications
-    final downloadController = Get.find<DownloadController>();
-    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-      'download_channel',
-      'Download Progress',
-      channelDescription: 'Channel for download progress notifications',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
-      progress: downloadController.downloadProgress.value.toInt(),
-      maxProgress: 100,
-    );
-    var iOSPlatformChannelSpecifics = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-      badgeNumber: downloadController.downloadProgress.value.toInt(),
-      subtitle: 'Downloading video',
-    );
-    FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-        FlutterLocalNotificationsPlugin();
-
-    var platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics,
-    );
-    const InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-      iOS: DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true),
-    );
-
-    flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (response) {
-        debugPrint(
-            "Notification clicked with payload: ${response.payload.toString()}");
-        // if (response.payload == 'video_download') {
-        //   // Handle the notification click
-        //   // Get.toNamed('/downloads'); // Navigate to downloads page
-        // }
-      },
-    );
-    flutterLocalNotificationsPlugin.show(
-      0,
-      '${selectedVideo.value?.title}',
-      'Download progress: ${downloadController.downloadProgress.value.toStringAsFixed(1)}%',
-      platformChannelSpecifics,
-      payload: 'video_download',
-    );
-  }
-
+  // void showNotificationDownloadProgress() {
+  //   // Implement your notification logic here
+  //   // For example, using a package like flutter_local_notifications
+  //   final downloadController = Get.find<DownloadController>();
+  //   var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+  //     'download_channel',
+  //     'Download Progress',
+  //     channelDescription: 'Channel for download progress notifications',
+  //     importance: Importance.max,
+  //     priority: Priority.high,
+  //     showWhen: false,
+  //     progress: downloadController.downloadProgress.value.toInt(),
+  //     maxProgress: 100,
+  //   );
+  //   var iOSPlatformChannelSpecifics = DarwinNotificationDetails(
+  //     presentAlert: true,
+  //     presentBadge: true,
+  //     presentSound: true,
+  //     badgeNumber: downloadController.downloadProgress.value.toInt(),
+  //     subtitle: 'Downloading video',
+  //   );
+  //   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  //       FlutterLocalNotificationsPlugin();
+  //
+  //   var platformChannelSpecifics = NotificationDetails(
+  //     android: androidPlatformChannelSpecifics,
+  //     iOS: iOSPlatformChannelSpecifics,
+  //   );
+  //   const InitializationSettings initializationSettings =
+  //       InitializationSettings(
+  //     android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+  //     iOS: DarwinInitializationSettings(
+  //         requestAlertPermission: true,
+  //         requestBadgePermission: true,
+  //         requestSoundPermission: true),
+  //   );
+  //
+  //   flutterLocalNotificationsPlugin.initialize(
+  //     initializationSettings,
+  //     onDidReceiveNotificationResponse: (response) {
+  //       debugPrint(
+  //           "Notification clicked with payload: ${response.payload.toString()}");
+  //       // if (response.payload == 'video_download') {
+  //       //   // Handle the notification click
+  //       //   // Get.toNamed('/downloads'); // Navigate to downloads page
+  //       // }
+  //     },
+  //   );
+  //   flutterLocalNotificationsPlugin.show(
+  //     0,
+  //     '${selectedVideo.value?.title}',
+  //     'Download progress: ${downloadController.downloadProgress.value.toStringAsFixed(1)}%',
+  //     platformChannelSpecifics,
+  //     payload: 'video_download',
+  //   );
+  // }
+  //
   // Future<void> downloadWithRetry(String url, String savePath) async {
   //   final dio = Dio();
   //   const maxRetries = 3;
